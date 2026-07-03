@@ -1,0 +1,48 @@
+<div class="shell" [attr.data-theme]="preferences.theme()">
+  <header class="topbar">
+    <nav class="tool-nav" [attr.aria-label]="copy().navLabel">
+      <a routerLink="/chord-finder" routerLinkActive="active" ariaCurrentWhenActive="page">
+        {{ copy().chordFinder }}
+      </a>
+      <a routerLink="/circle-of-fifths" routerLinkActive="active" ariaCurrentWhenActive="page">
+        {{ copy().circleOfFifths }}
+      </a>
+    </nav>
+
+    <a class="brand" routerLink="/chord-finder" [attr.aria-label]="copy().homeLabel">
+      The Chords
+    </a>
+
+    <div class="preferences">
+      <button
+        type="button"
+        role="switch"
+        [attr.aria-checked]="preferences.theme() === 'dark'"
+        [attr.aria-label]="preferences.theme() === 'dark' ? copy().darkTheme : copy().lightTheme"
+        (click)="toggleTheme()"
+      >
+        <span aria-hidden="true">{{ preferences.theme() === 'dark' ? '☾' : '☀' }}</span>
+        {{ preferences.theme() === 'dark' ? copy().darkTheme : copy().lightTheme }}
+      </button>
+      <button
+        type="button"
+        role="switch"
+        [attr.aria-checked]="preferences.language() === 'es'"
+        [attr.aria-label]="copy().language"
+        (click)="toggleLanguage()"
+      >
+        {{ preferences.language() | uppercase }}
+      </button>
+    </div>
+  </header>
+
+  <main class="tool-content">
+    <router-outlet />
+  </main>
+
+  <footer class="site-footer">
+    <!-- Replace # with the repository URL. -->
+    <a href="#">{{ copy().repository }}</a>
+    <p>{{ copy().attribution }}</p>
+  </footer>
+</div>

@@ -41,8 +41,47 @@
   </main>
 
   <footer class="site-footer">
-    <!-- Replace # with the repository URL. -->
-    <a href="#">{{ copy().repository }}</a>
-    <p>{{ copy().attribution }}</p>
+    <div class="footer-links">
+      <a
+        class="repository-link"
+        href="https://github.com/elparaquecosadeque/the-chords"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ copy().repository }}
+      </a>
+
+      <nav class="social-links" [attr.aria-label]="copy().socialLinks">
+        <a
+          href="https://github.com/elparaquecosadeque"
+          target="_blank"
+          rel="noopener noreferrer"
+          [attr.aria-label]="copy().githubProfile"
+          [attr.title]="copy().githubProfile"
+        >
+          <i class="fa-brands fa-github" aria-hidden="true"></i>
+        </a>
+        <a
+          href="https://www.linkedin.com/in/gerardoleon-97/"
+          target="_blank"
+          rel="noopener noreferrer"
+          [attr.aria-label]="copy().linkedinProfile"
+          [attr.title]="copy().linkedinProfile"
+        >
+          <i class="fa-brands fa-linkedin" aria-hidden="true"></i>
+        </a>
+      </nav>
+    </div>
+
+    <p>
+      {{ copy().attribution }}
+      <a
+        href="https://www.linkedin.com/in/gerardoleon-97/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Bruno Leon
+      </a>
+    </p>
   </footer>
 </div>

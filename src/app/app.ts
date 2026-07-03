@@ -23,8 +23,11 @@ export class App {
           darkTheme: 'Tema oscuro',
           lightTheme: 'Tema claro',
           language: 'Cambiar idioma',
-          repository: 'Repositorio',
-          attribution: 'hecho con metodología HitL bajo la supervisión de Bruno Leon',
+          repository: 'Repositorio de The Chords',
+          socialLinks: 'Perfiles sociales',
+          githubProfile: 'Perfil de GitHub de Bruno Leon',
+          linkedinProfile: 'Perfil de LinkedIn de Bruno Leon',
+          attribution: 'hecho con metodología HitL bajo la supervisión de',
         }
       : {
           navLabel: 'Chord tools',
@@ -34,8 +37,11 @@ export class App {
           darkTheme: 'Dark theme',
           lightTheme: 'Light theme',
           language: 'Change language',
-          repository: 'Repository',
-          attribution: 'made with HitL methodology with supervision of Bruno Leon',
+          repository: 'The Chords repository',
+          socialLinks: 'Social profiles',
+          githubProfile: 'Bruno Leon on GitHub',
+          linkedinProfile: 'Bruno Leon on LinkedIn',
+          attribution: 'made with HitL methodology with supervision of',
         },
   );
 

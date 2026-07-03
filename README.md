@@ -10,3 +10,4 @@ npm start
 The application opens Chord Finder by default. Use the banner navigation or visit `/chord-finder` and `/circle-of-fifths` directly.
 
 Replace the placeholder repository link in `src/app/app.html` before deployment.
+

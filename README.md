@@ -11,3 +11,9 @@ The application opens Chord Finder by default. Use the banner navigation or visi
 
 Replace the placeholder repository link in `src/app/app.html` before deployment.
 
+
+## Try the demo app
+
+https://elparaquecosadeque.github.io/the-chords/chord-finder
+
+![Project Screenshot](/public/the-chords-screenshot.jpg)

@@ -18,8 +18,8 @@
     "@angular/platform-browser": "^22.0.0",
     "@angular/router": "^22.0.0",
     "@fortawesome/fontawesome-free": "^7.3.0",
-    "@gblp/chord-finder": "0.2.0",
-    "@gblp/circle-of-fifths": "0.2.0",
+    "@gblp/chord-finder": "0.3.2",
+    "@gblp/circle-of-fifths": "0.3.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -1,36 +1,27 @@
 <div class="shell" [attr.data-theme]="preferences.theme()">
   <header class="topbar">
-    <nav class="tool-nav" [attr.aria-label]="copy().navLabel">
+    <nav class="tool-nav" [attr.aria-label]="languageLocalization().navLabel">
       <a routerLink="/chord-finder" routerLinkActive="active" ariaCurrentWhenActive="page">
-        {{ copy().chordFinder }}
+        {{ languageLocalization().chordFinder }}
       </a>
       <a routerLink="/circle-of-fifths" routerLinkActive="active" ariaCurrentWhenActive="page">
-        {{ copy().circleOfFifths }}
+        {{ languageLocalization().circleOfFifths }}
       </a>
     </nav>
 
-    <a class="brand" routerLink="/chord-finder" [attr.aria-label]="copy().homeLabel">
+    <a class="brand" routerLink="/chord-finder" [attr.aria-label]="languageLocalization().homeLabel">
       The Chords
     </a>
 
     <div class="preferences">
-      <button
-        type="button"
-        role="switch"
-        [attr.aria-checked]="preferences.theme() === 'dark'"
-        [attr.aria-label]="preferences.theme() === 'dark' ? copy().darkTheme : copy().lightTheme"
-        (click)="toggleTheme()"
-      >
+      <button type="button" role="switch" [attr.aria-checked]="preferences.theme() === 'dark'"
+        [attr.aria-label]="preferences.theme() === 'dark' ? languageLocalization().darkTheme : languageLocalization().lightTheme"
+        (click)="toggleTheme()">
         <span aria-hidden="true">{{ preferences.theme() === 'dark' ? '☾' : '☀' }}</span>
-        {{ preferences.theme() === 'dark' ? copy().darkTheme : copy().lightTheme }}
+        {{ preferences.theme() === 'dark' ? languageLocalization().darkTheme : languageLocalization().lightTheme }}
       </button>
-      <button
-        type="button"
-        role="switch"
-        [attr.aria-checked]="preferences.language() === 'es'"
-        [attr.aria-label]="copy().language"
-        (click)="toggleLanguage()"
-      >
+      <button type="button" role="switch" [attr.aria-checked]="preferences.language() === 'es'"
+        [attr.aria-label]="languageLocalization().language" (click)="toggleLanguage()">
         {{ preferences.language() | uppercase }}
       </button>
     </div>
@@ -42,44 +33,27 @@
 
   <footer class="site-footer">
     <div class="footer-links">
-      <a
-        class="repository-link"
-        href="https://github.com/elparaquecosadeque/the-chords"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {{ copy().repository }}
+      <a class="repository-link" href="https://github.com/elparaquecosadeque/the-chords" target="_blank"
+        rel="noopener noreferrer">
+        {{ languageLocalization().repository }}
       </a>
 
-      <nav class="social-links" [attr.aria-label]="copy().socialLinks">
-        <a
-          href="https://github.com/elparaquecosadeque"
-          target="_blank"
-          rel="noopener noreferrer"
-          [attr.aria-label]="copy().githubProfile"
-          [attr.title]="copy().githubProfile"
-        >
+      <nav class="social-links" [attr.aria-label]="languageLocalization().socialLinks">
+        <a href="https://github.com/elparaquecosadeque" target="_blank" rel="noopener noreferrer"
+          [attr.aria-label]="languageLocalization().githubProfile" [attr.title]="languageLocalization().githubProfile">
           <i class="fa-brands fa-github" aria-hidden="true"></i>
         </a>
-        <a
-          href="https://www.linkedin.com/in/gerardoleon-97/"
-          target="_blank"
-          rel="noopener noreferrer"
-          [attr.aria-label]="copy().linkedinProfile"
-          [attr.title]="copy().linkedinProfile"
-        >
+        <a href="https://www.linkedin.com/in/gerardoleon-97/" target="_blank" rel="noopener noreferrer"
+          [attr.aria-label]="languageLocalization().linkedinProfile"
+          [attr.title]="languageLocalization().linkedinProfile">
           <i class="fa-brands fa-linkedin" aria-hidden="true"></i>
         </a>
       </nav>
     </div>
 
     <p>
-      {{ copy().attribution }}
-      <a
-        href="https://www.linkedin.com/in/gerardoleon-97/"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      {{ languageLocalization().attribution }}
+      <a href="https://www.linkedin.com/in/gerardoleon-97/" target="_blank" rel="noopener noreferrer">
         Bruno Leon
       </a>
     </p>

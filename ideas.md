@@ -13,4 +13,4 @@
    También tal modal no debe hacer overflow de la vista así que debe mantenerse
    en los márgenes, si es necesario, mostrar en dos columnas
 
-3. añadir acordes de triadas a la base de datos del fork que le hice a chords-db
+3. añadir acordes de triadas a la base de datos del fork que le hice a chords-db:  https://github.com/elparaquecosadeque/chords-db

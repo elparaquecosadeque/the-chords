@@ -19,6 +19,12 @@ export const routes: Routes = [
       import('./circle-of-fifths-page').then(({ CircleOfFifthsPage }) => CircleOfFifthsPage),
   },
   {
+    path: 'bass-notes',
+    title: 'Bass Notes | The Chords',
+    loadComponent: () =>
+      import('./bass-notes-page').then(({ BassNotesPageWrapper }) => BassNotesPageWrapper),
+  },
+  {
     path: '**',
     redirectTo: 'chord-finder',
   },

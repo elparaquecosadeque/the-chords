@@ -11,6 +11,10 @@
   --chords-danger: #ff315a;
   --chords-border: rgba(0, 255, 240, 0.76);
   --chords-on-primary: #000000;
+  --chords-nut: #d0cce8;
+  --chords-string: rgba(210, 205, 255, 0.65);
+  --chords-fret: rgba(180, 175, 230, 0.45);
+  --chords-marker: rgba(200, 195, 255, 0.22);
 
   display: flex;
   min-height: 100dvh;
@@ -33,6 +37,10 @@
   --chords-danger: #a855f7;
   --chords-border: #e2e8f0;
   --chords-on-primary: #ffffff;
+  --chords-nut: #334155;
+  --chords-string: rgba(71, 85, 105, 0.75);
+  --chords-fret: rgba(100, 116, 139, 0.5);
+  --chords-marker: rgba(148, 163, 184, 0.3);
   color-scheme: light;
 }
 

@@ -25,6 +25,11 @@ export const routes: Routes = [
       import('./bass-notes-page').then(({ BassNotesPageWrapper }) => BassNotesPageWrapper),
   },
   {
+    path: 'soloin',
+    title: 'Soloin | The Chords',
+    loadComponent: () => import('./soloin-page').then(({ SoloinPage }) => SoloinPage),
+  },
+  {
     path: '**',
     redirectTo: 'chord-finder',
   },

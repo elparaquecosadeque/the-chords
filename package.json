@@ -21,6 +21,7 @@
     "@gblp/bass-notes": "^0.2.1",
     "@gblp/chord-finder": "0.3.5",
     "@gblp/circle-of-fifths": "0.3.2",
+    "@gblp/soloin": "^0.2.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

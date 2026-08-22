@@ -15,6 +15,13 @@
   --chords-string: rgba(210, 205, 255, 0.65);
   --chords-fret: rgba(180, 175, 230, 0.45);
   --chords-marker: rgba(200, 195, 255, 0.22);
+  --chords-scale-note: color-mix(in srgb, var(--chords-muted) 55%, var(--chords-primary));
+  --chords-chord-color-1: var(--chords-primary);
+  --chords-chord-color-2: var(--chords-secondary);
+  --chords-chord-color-3: var(--chords-highlight);
+  --chords-chord-color-4: var(--chords-danger);
+  --chords-chord-color-5: #39ff14;
+  --chords-chord-color-6: #b026ff;
 
   display: flex;
   min-height: 100dvh;
@@ -41,6 +48,13 @@
   --chords-string: rgba(71, 85, 105, 0.75);
   --chords-fret: rgba(100, 116, 139, 0.5);
   --chords-marker: rgba(148, 163, 184, 0.3);
+  --chords-scale-note: color-mix(in srgb, var(--chords-muted) 55%, var(--chords-primary));
+  --chords-chord-color-1: var(--chords-primary);
+  --chords-chord-color-2: var(--chords-secondary);
+  --chords-chord-color-3: var(--chords-highlight);
+  --chords-chord-color-4: var(--chords-danger);
+  --chords-chord-color-5: #84cc16;
+  --chords-chord-color-6: #a78bfa;
   color-scheme: light;
 }
 

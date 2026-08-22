@@ -1,0 +1,80 @@
+.compose {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: clamp(24px, 4vw, 48px) clamp(16px, 4vw, 48px);
+}
+
+.compose-header h1 {
+  margin: 0 0 6px;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.compose-header p {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--chords-muted);
+}
+
+.compose-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compose-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  color: var(--chords-muted);
+  background: transparent;
+  border: 1px solid var(--chords-border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.compose-tabs button:hover,
+.compose-tabs button:focus-visible {
+  color: var(--chords-text);
+  border-color: var(--chords-primary);
+  outline: none;
+}
+
+.compose-tabs button.active {
+  color: var(--chords-on-primary);
+  background: var(--chords-primary);
+  border-color: var(--chords-primary);
+}
+
+.compose-tab-index {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: color-mix(in srgb, currentColor 20%, transparent);
+  font-size: 0.7rem;
+}
+
+.compose-step-description {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--chords-muted);
+  font-size: 0.9rem;
+}
+
+.compose-panel {
+  border: 1px solid var(--chords-border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--chords-surface);
+}

@@ -1,0 +1,36 @@
+<section class="compose">
+  <header class="compose-header">
+    <h1>{{ localization.languageDictionary().composePage.title }}</h1>
+    <p>{{ localization.languageDictionary().composePage.intro }}</p>
+  </header>
+
+  <div class="compose-tabs" role="tablist">
+    @for (tab of tabs; track tab; let i = $index) {
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab() === tab"
+        [class.active]="activeTab() === tab"
+        (click)="setTab(tab)"
+      >
+        <span class="compose-tab-index">{{ i + 1 }}</span>
+        {{ localization.languageDictionary().composePage.tabs[tab] }}
+      </button>
+    }
+  </div>
+
+  <p class="compose-step-description">{{ localization.languageDictionary().composePage.descriptions[activeTab()] }}</p>
+
+  <div class="compose-panel" [hidden]="activeTab() !== 'rhythm'">
+    <the-chords-chord-finder [language]="preferences.language()" />
+  </div>
+  <div class="compose-panel" [hidden]="activeTab() !== 'theory'">
+    <the-chords-circle-of-fifths [language]="preferences.language()" />
+  </div>
+  <div class="compose-panel" [hidden]="activeTab() !== 'solo'">
+    <the-chords-soloin [language]="preferences.language()" />
+  </div>
+  <div class="compose-panel" [hidden]="activeTab() !== 'bass'">
+    <app-bass-notes [language]="preferences.language()" />
+  </div>
+</section>

@@ -30,6 +30,11 @@ export const routes: Routes = [
     loadComponent: () => import('./soloin-page').then(({ SoloinPage }) => SoloinPage),
   },
   {
+    path: 'compose',
+    title: 'Compose | The Chords',
+    loadComponent: () => import('./compose-page').then(({ ComposePage }) => ComposePage),
+  },
+  {
     path: '**',
     redirectTo: 'chord-finder',
   },

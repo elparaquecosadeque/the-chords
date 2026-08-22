@@ -14,6 +14,19 @@ export class LocalizationService {
                 circleOfFifths: 'Círculo de quintas',
                 bassNotes: 'Notas de bajo',
                 soloin: 'Soloin',
+                compose: 'Componer',
+                composePage: {
+                    title: 'Componer',
+                    intro:
+                        'Recorre las 4 herramientas en el orden en que normalmente compondrías una canción: ritmo, teoría, solo y bajo. Lo que escribas en cada una se conserva mientras navegas entre pestañas.',
+                    tabs: { rhythm: 'Ritmo', theory: 'Teoría', solo: 'Solo', bass: 'Bajo' },
+                    descriptions: {
+                        rhythm: 'Empieza por tu progresión de acordes rítmica en el Buscador de acordes.',
+                        theory: 'Explora la tonalidad y la armonía de tu progresión en el Círculo de quintas.',
+                        solo: 'Encuentra las escalas para tu solo sobre esa progresión en Soloin.',
+                        bass: 'Construye tu línea de bajo a partir de los mismos acordes en Notas de bajo.',
+                    },
+                },
                 homeLabel: 'Inicio de The Chords',
                 darkTheme: 'Tema oscuro',
                 lightTheme: 'Tema claro',
@@ -30,6 +43,19 @@ export class LocalizationService {
                 circleOfFifths: 'Circle of Fifths',
                 bassNotes: 'Bass Notes',
                 soloin: 'Soloin',
+                compose: 'Compose',
+                composePage: {
+                    title: 'Compose',
+                    intro:
+                        'Walk through all 4 tools in the order you’d normally write a song: rhythm, theory, solo, and bass. Whatever you type in each one stays there as you switch tabs.',
+                    tabs: { rhythm: 'Rhythm', theory: 'Theory', solo: 'Solo', bass: 'Bass' },
+                    descriptions: {
+                        rhythm: 'Start with your rhythm chord progression in Chord Finder.',
+                        theory: 'Explore the key and harmony behind that progression in Circle of Fifths.',
+                        solo: 'Find the scales for your solo over that progression in Soloin.',
+                        bass: 'Build a bassline from the same chords in Bass Notes.',
+                    },
+                },
                 homeLabel: 'The Chords home',
                 darkTheme: 'Dark theme',
                 lightTheme: 'Light theme',

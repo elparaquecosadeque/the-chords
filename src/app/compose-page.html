@@ -22,10 +22,33 @@
   <p class="compose-step-description">{{ localization.languageDictionary().composePage.descriptions[activeTab()] }}</p>
 
   <div class="compose-panel" [hidden]="activeTab() !== 'rhythm'">
-    <the-chords-chord-finder [language]="preferences.language()" />
+    <label class="compose-toggle">
+      <input
+        type="checkbox"
+        [checked]="preferences.showRhythmCirclePreview()"
+        (change)="preferences.showRhythmCirclePreview.set($any($event.target).checked)"
+      />
+      {{ localization.languageDictionary().composePage.circlePreviewToggle }}
+    </label>
+    <div class="rhythm-layout" [class.with-preview]="preferences.showRhythmCirclePreview()">
+      <the-chords-chord-finder [language]="preferences.language()" />
+      @if (preferences.showRhythmCirclePreview()) {
+        <circle-of-fifths-wheel
+          class="rhythm-circle-preview"
+          [language]="preferences.language()"
+          [selectedIndex]="liveCircleIndex()"
+          [selectedType]="liveCircleType()"
+          [interactive]="false"
+        />
+      }
+    </div>
   </div>
   <div class="compose-panel" [hidden]="activeTab() !== 'theory'">
-    <the-chords-circle-of-fifths [language]="preferences.language()" />
+    <the-chords-circle-of-fifths
+      [language]="preferences.language()"
+      [alwaysShowDiagrams]="preferences.alwaysShowDiagrams()"
+      (alwaysShowDiagramsChange)="preferences.alwaysShowDiagrams.set($event)"
+    />
   </div>
   <div class="compose-panel" [hidden]="activeTab() !== 'solo'">
     <the-chords-soloin [language]="preferences.language()" />

@@ -23,6 +23,7 @@
     </a>
 
     <div class="preferences">
+      <app-metronome />
       <button type="button" role="switch" [attr.aria-checked]="preferences.theme() === 'dark'"
         [attr.aria-label]="preferences.theme() === 'dark' ? languageLocalization().darkTheme : languageLocalization().lightTheme"
         (click)="toggleTheme()">

@@ -1,0 +1,62 @@
+:host {
+  display: flex;
+}
+
+.metronome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metronome-toggle {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--chords-text);
+  background: var(--chords-surface);
+  border: 1px solid var(--chords-border);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.85rem;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--chords-primary);
+    outline: none;
+  }
+
+  &[aria-pressed='true'] {
+    color: var(--chords-on-primary);
+    background: var(--chords-primary);
+    border-color: var(--chords-primary);
+  }
+}
+
+.metronome-bpm-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  color: var(--chords-text);
+  background: var(--chords-surface);
+  border: 1px solid var(--chords-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.metronome-bpm {
+  width: 3.2em;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: none;
+  font: inherit;
+  text-align: right;
+
+  &:focus-visible {
+    outline: none;
+  }
+}

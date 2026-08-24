@@ -3,11 +3,12 @@ import { Component, computed, effect, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { LocalizationService } from './localization.service';
+import { Metronome } from './metronome';
 import { PreferencesService } from './preferences.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, UpperCasePipe],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, UpperCasePipe, Metronome],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

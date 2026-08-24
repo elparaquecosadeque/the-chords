@@ -1,0 +1,23 @@
+<div class="metronome">
+  <button
+    type="button"
+    class="metronome-toggle"
+    [attr.aria-pressed]="isPlaying()"
+    [attr.aria-label]="isPlaying() ? text().metronome.pause : text().metronome.play"
+    (click)="toggle()"
+  >
+    <span aria-hidden="true">{{ isPlaying() ? '⏸' : '▶' }}</span>
+  </button>
+  <label class="metronome-bpm-label">
+    <input
+      class="metronome-bpm"
+      type="number"
+      min="40"
+      max="240"
+      [attr.aria-label]="text().metronome.bpmLabel"
+      [value]="bpm()"
+      (input)="onBpmChange($any($event.target).value)"
+    />
+    <span aria-hidden="true">{{ text().metronome.bpmUnit }}</span>
+  </label>
+</div>

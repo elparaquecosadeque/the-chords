@@ -1,6 +1,6 @@
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { BassNotesPage } from '@gblp/bass-notes';
-import { CircleOfFifthsComponent } from '@gblp/circle-of-fifths';
+import { CircleOfFifthsComponent, CircleOfFifthsWheel } from '@gblp/circle-of-fifths';
 import { ChordFinderComponent } from '@gblp/chord-finder';
 import { detectKey } from '@gblp/music-theory';
 import { SoloinComponent } from '@gblp/soloin';
@@ -21,7 +21,7 @@ const MINOR_PC_TO_CIRCLE_INDEX: Record<number, number> = {
 };
 
 @Component({
-  imports: [ChordFinderComponent, CircleOfFifthsComponent, SoloinComponent, BassNotesPage],
+  imports: [ChordFinderComponent, CircleOfFifthsComponent, CircleOfFifthsWheel, SoloinComponent, BassNotesPage],
   templateUrl: './compose-page.html',
   styleUrl: './compose-page.scss',
 })
@@ -37,6 +37,24 @@ export class ComposePage {
   private readonly soloin = viewChild(SoloinComponent);
   private readonly bass = viewChild(BassNotesPage);
 
+  // Live (not seed-once) — feeds the read-only circle preview next to Chord Finder while the
+  // user types. The seeded Theory-tab circle below stays seed-once so manual key picks stick.
+  private readonly liveDetectedKey = computed(() => {
+    const query = this.chordFinder()?.query() ?? '';
+    const chords = query.split(',').map((c) => c.trim()).filter(Boolean);
+    return detectKey(chords);
+  });
+
+  readonly liveCircleIndex = computed(() => {
+    const key = this.liveDetectedKey();
+    if (!key) return null;
+    const index =
+      key.mode === 'major' ? MAJOR_PC_TO_CIRCLE_INDEX[key.root] : MINOR_PC_TO_CIRCLE_INDEX[key.root];
+    return index ?? null;
+  });
+
+  readonly liveCircleType = computed(() => this.liveDetectedKey()?.mode ?? null);
+
   // ponytail: Soloin/Bass Notes ship with their own non-empty demo progression, so "seed only if
   // target is empty" never fires for them. Track seeding explicitly per tab instead, once per page load.
   private readonly seededTabs = new Set<ComposeTab>();
@@ -48,7 +66,7 @@ export class ComposePage {
 
   private seedFromRhythm(tab: ComposeTab): void {
     if (tab === 'rhythm' || this.seededTabs.has(tab)) return;
-    const progression = this.chordFinder()?.query?.trim();
+    const progression = this.chordFinder()?.query()?.trim();
     if (!progression) return;
     this.seededTabs.add(tab);
 

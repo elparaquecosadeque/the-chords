@@ -22,25 +22,30 @@
   <p class="compose-step-description">{{ localization.languageDictionary().composePage.descriptions[activeTab()] }}</p>
 
   <div class="compose-panel" [hidden]="activeTab() !== 'rhythm'">
-    <label class="compose-toggle">
-      <input
-        type="checkbox"
-        [checked]="preferences.showRhythmCirclePreview()"
-        (change)="preferences.showRhythmCirclePreview.set($any($event.target).checked)"
-      />
-      {{ localization.languageDictionary().composePage.circlePreviewToggle }}
-    </label>
-    <div class="rhythm-layout" [class.with-preview]="preferences.showRhythmCirclePreview()">
+    <div class="rhythm-layout">
       <the-chords-chord-finder [language]="preferences.language()" />
-      @if (preferences.showRhythmCirclePreview()) {
-        <circle-of-fifths-wheel
-          class="rhythm-circle-preview"
-          [language]="preferences.language()"
-          [selectedIndex]="liveCircleIndex()"
-          [selectedType]="liveCircleType()"
-          [interactive]="false"
-        />
-      }
+      <div class="rhythm-circle-preview-wrap">
+        <label class="compose-toggle">
+          <input
+            type="checkbox"
+            [checked]="preferences.showRhythmCirclePreview()"
+            (change)="preferences.showRhythmCirclePreview.set($any($event.target).checked)"
+          />
+          {{ localization.languageDictionary().composePage.circlePreviewToggle }}
+        </label>
+        @if (preferences.showRhythmCirclePreview()) {
+          <circle-of-fifths-wheel
+            class="rhythm-circle-preview"
+            [language]="preferences.language()"
+            [selectedIndex]="liveCircleIndex()"
+            [selectedType]="liveCircleType()"
+            [interactive]="false"
+          />
+          <p class="rhythm-circle-preview-note">
+            {{ localization.languageDictionary().composePage.enharmonicNote }}
+          </p>
+        }
+      </div>
     </div>
   </div>
   <div class="compose-panel" [hidden]="activeTab() !== 'theory'">

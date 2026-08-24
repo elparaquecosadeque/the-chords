@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { LocalizationService } from './localization.service';
 
@@ -13,7 +13,12 @@ export class Metronome implements OnDestroy {
   readonly text = this.localization.languageDictionary;
 
   readonly bpm = signal(120);
+  readonly bpmInputValue = signal('120');
   readonly isPlaying = signal(false);
+  // Drives a CSS pulse timed to the beat (approximate, not audio-sample-synced —
+  // sufficient as a visual "it's alive" cue without wiring the animation to the
+  // lookahead audio scheduler itself).
+  readonly beatSeconds = computed(() => `${(60 / this.bpm()).toFixed(3)}s`);
 
   private audioCtx: AudioContext | null = null;
   private schedulerId: number | null = null;
@@ -29,11 +34,22 @@ export class Metronome implements OnDestroy {
     }
   }
 
-  onBpmChange(value: string): void {
+  onBpmInput(value: string): void {
+    // Track the raw text as-is while typing — don't clamp or rewrite the field
+    // mid-entry, or the DOM value fights the user's cursor (e.g. clearing the
+    // field then typing "90" digit-by-digit used to land on "240").
+    this.bpmInputValue.set(value);
     const parsed = Number(value);
-    if (!Number.isNaN(parsed)) {
-      this.bpm.set(Math.min(240, Math.max(40, parsed)));
+    if (value.trim() !== '' && !Number.isNaN(parsed) && parsed >= 40 && parsed <= 240) {
+      this.bpm.set(parsed);
     }
+  }
+
+  onBpmBlur(): void {
+    const parsed = Number(this.bpmInputValue());
+    const clamped = Number.isNaN(parsed) ? this.bpm() : Math.min(240, Math.max(40, parsed));
+    this.bpm.set(clamped);
+    this.bpmInputValue.set(String(clamped));
   }
 
   private start(): void {

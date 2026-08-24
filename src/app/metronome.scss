@@ -27,10 +27,42 @@
     outline: none;
   }
 
+  .metronome-icon {
+    display: inline-block;
+  }
+
+  .icon-play {
+    // The ▶ glyph's ink sits left of its own character box — nudge it right
+    // so it reads as centered inside the round button instead of off-axis.
+    transform: translateX(1px);
+  }
+
   &[aria-pressed='true'] {
     color: var(--chords-on-primary);
     background: var(--chords-primary);
     border-color: var(--chords-primary);
+  }
+
+  &.playing {
+    animation: metronome-pulse var(--metronome-beat, 0.5s) ease-out infinite;
+  }
+}
+
+@keyframes metronome-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--chords-primary) 65%, transparent);
+  }
+  40% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--chords-primary) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--chords-primary) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metronome-toggle.playing {
+    animation: none;
   }
 }
 

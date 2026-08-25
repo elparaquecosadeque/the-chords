@@ -79,21 +79,6 @@
   background: var(--chords-surface);
 }
 
-.compose-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px clamp(16px, 4vw, 48px) 0;
-  color: var(--chords-muted);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-
-  input {
-    cursor: pointer;
-  }
-}
-
 .rhythm-layout {
   display: flex;
   flex-direction: column;
@@ -106,26 +91,66 @@
   }
 }
 
+.rhythm-circle-preview-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  color: var(--chords-text);
+  background: var(--chords-surface);
+  border: 1px solid var(--chords-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--chords-primary);
+    outline: none;
+  }
+
+  &[aria-checked='true'] {
+    color: var(--chords-on-primary);
+    background: var(--chords-primary);
+    border-color: var(--chords-primary);
+  }
+}
+
 .rhythm-circle-preview-wrap {
+  margin-top: 5vh;
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
   max-width: 380px;
-  padding: 16px;
-  border-radius: 20px;
-  // A soft glow of its own instead of sitting on the panel's plain surface —
-  // echoes the ambient light behind the neighboring tool instead of reading
-  // as a separate, disconnected block.
-  background: radial-gradient(
-    circle at 50% 35%,
-    color-mix(in srgb, var(--chords-secondary) 16%, transparent),
-    transparent 70%
-  );
 
-  .compose-toggle {
-    padding: 0;
+  &.expanded {
+    padding: 16px;
+    border: 1px solid var(--chords-border);
+    border-radius: 20px;
+    // A solid base (not "transparent" fading into whatever the panel behind
+    // it happens to be) plus a soft glow on top — reads as its own deliberate
+    // card instead of a leftover black rectangle.
+    background:
+      radial-gradient(
+        circle at 50% 30%,
+        color-mix(in srgb, var(--chords-secondary) 18%, transparent),
+        transparent 65%
+      ),
+      var(--chords-background-alt);
   }
+}
+
+.rhythm-circle-preview-resize {
+  // Native resize handle — drag the corner to size the preview; the wheel
+  // itself already scales fluidly (width: 100%) so it tracks the drag.
+  resize: horizontal;
+  overflow: hidden;
+  width: 100%;
+  min-width: 200px;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .rhythm-circle-preview {

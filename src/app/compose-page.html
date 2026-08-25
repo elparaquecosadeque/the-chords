@@ -24,23 +24,27 @@
   <div class="compose-panel" [hidden]="activeTab() !== 'rhythm'">
     <div class="rhythm-layout">
       <the-chords-chord-finder [language]="preferences.language()" />
-      <div class="rhythm-circle-preview-wrap">
-        <label class="compose-toggle">
-          <input
-            type="checkbox"
-            [checked]="preferences.showRhythmCirclePreview()"
-            (change)="preferences.showRhythmCirclePreview.set($any($event.target).checked)"
-          />
+      <div class="rhythm-circle-preview-wrap" [class.expanded]="preferences.showRhythmCirclePreview()">
+        <button
+          type="button"
+          role="switch"
+          class="rhythm-circle-preview-toggle"
+          [attr.aria-checked]="preferences.showRhythmCirclePreview()"
+          (click)="preferences.showRhythmCirclePreview.update(v => !v)"
+        >
+          <span aria-hidden="true">{{ preferences.showRhythmCirclePreview() ? '●' : '○' }}</span>
           {{ localization.languageDictionary().composePage.circlePreviewToggle }}
-        </label>
+        </button>
         @if (preferences.showRhythmCirclePreview()) {
-          <circle-of-fifths-wheel
-            class="rhythm-circle-preview"
-            [language]="preferences.language()"
-            [selectedIndex]="liveCircleIndex()"
-            [selectedType]="liveCircleType()"
-            [interactive]="false"
-          />
+          <div class="rhythm-circle-preview-resize">
+            <circle-of-fifths-wheel
+              class="rhythm-circle-preview"
+              [language]="preferences.language()"
+              [selectedIndex]="liveCircleIndex()"
+              [selectedType]="liveCircleType()"
+              [interactive]="false"
+            />
+          </div>
           <p class="rhythm-circle-preview-note">
             {{ localization.languageDictionary().composePage.enharmonicNote }}
           </p>
@@ -49,11 +53,7 @@
     </div>
   </div>
   <div class="compose-panel" [hidden]="activeTab() !== 'theory'">
-    <the-chords-circle-of-fifths
-      [language]="preferences.language()"
-      [alwaysShowDiagrams]="preferences.alwaysShowDiagrams()"
-      (alwaysShowDiagramsChange)="preferences.alwaysShowDiagrams.set($event)"
-    />
+    <the-chords-circle-of-fifths [language]="preferences.language()" />
   </div>
   <div class="compose-panel" [hidden]="activeTab() !== 'solo'">
     <the-chords-soloin [language]="preferences.language()" />

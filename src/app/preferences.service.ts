@@ -14,18 +14,12 @@ export class PreferencesService {
   readonly showRhythmCirclePreview = signal<boolean>(
     localStorage.getItem('the-chords-show-circle-preview') === 'true',
   );
-  readonly alwaysShowDiagrams = signal<boolean>(
-    localStorage.getItem('the-chords-always-show-diagrams') === 'true',
-  );
 
   constructor() {
     effect(() => localStorage.setItem('the-chords-theme', this.theme()));
     effect(() => localStorage.setItem('the-chords-language', this.language()));
     effect(() =>
       localStorage.setItem('the-chords-show-circle-preview', String(this.showRhythmCirclePreview())),
-    );
-    effect(() =>
-      localStorage.setItem('the-chords-always-show-diagrams', String(this.alwaysShowDiagrams())),
     );
   }
 }

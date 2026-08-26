@@ -29,6 +29,13 @@ jobs:
       - run: npm ci
       - run: npm run build:gh-pages
 
+      # GitHub Pages has no server-side fallback for client-side routing — a
+      # direct request to e.g. /the-chords/chord-finder 404s before Angular's
+      # router ever loads. Pages does serve 404.html for any unmatched path,
+      # so a copy of index.html there lets the app boot and the router take
+      # over, with the URL staying exactly what was requested.
+      - run: cp dist/the-chords/browser/index.html dist/the-chords/browser/404.html
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4

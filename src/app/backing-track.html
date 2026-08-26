@@ -1,0 +1,78 @@
+<div class="backing-track">
+  <div class="backing-track-controls">
+    <button
+      type="button"
+      role="switch"
+      class="backing-track-toggle"
+      [attr.aria-checked]="enabled()"
+      [disabled]="loading()"
+      [attr.aria-label]="enabled() ? text().backingTrack.disable : text().backingTrack.enable"
+      (click)="toggle()"
+    >
+      @if (loading()) {
+        <span class="backing-track-spinner" aria-hidden="true"></span>
+      } @else {
+        <span aria-hidden="true">{{ enabled() ? '●' : '○' }}</span>
+      }
+      {{ text().backingTrack.title }}
+    </button>
+    @if (hasChords()) {
+      <button
+        type="button"
+        role="switch"
+        class="backing-track-sync"
+        [attr.aria-checked]="synced()"
+        [attr.aria-label]="text().backingTrack.sync"
+        (click)="toggleSync()"
+      >
+        <span aria-hidden="true">{{ synced() ? '●' : '○' }}</span>
+        {{ text().backingTrack.sync }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="backing-track-note">{{ text().backingTrack.loading }}</p>
+  } @else if (enabled() && !hasChords()) {
+    <p class="backing-track-note">{{ text().backingTrack.empty }}</p>
+  }
+
+  @if (hasChords()) {
+    <div class="backing-track-timeline" role="list">
+      @for (entry of timeline(); track entry.index; let slot = $index) {
+        <div
+          class="backing-track-block"
+          role="listitem"
+          [style.--bars]="entry.bars"
+          [class.active]="activeSlot() === slot"
+          [class.pulse]="activeSlot() === slot && beatPulse()"
+        >
+          <button
+            type="button"
+            class="backing-track-handle backing-track-reorder"
+            [attr.aria-label]="text().backingTrack.moveChord + ': ' + entry.chord.raw"
+            (pointerdown)="onReorderDragStart($event, slot)"
+            (keydown.arrowleft)="moveLeft(slot)"
+            (keydown.arrowright)="moveRight(slot)"
+          >
+            <span aria-hidden="true">⠿</span>
+          </button>
+          <span class="backing-track-chord-content">
+            <span class="backing-track-chord-name">{{ entry.chord.raw }}</span>
+            <span class="backing-track-bars">{{ entry.bars }} {{ text().backingTrack.bars }}</span>
+          </span>
+          <button
+            type="button"
+            class="backing-track-handle backing-track-resize"
+            [attr.aria-label]="text().backingTrack.resizeChord + ': ' + entry.chord.raw"
+            (pointerdown)="onResizeDragStart($event, slot)"
+            (keydown.arrowleft)="shrinkBars(slot)"
+            (keydown.arrowright)="growBars(slot)"
+          >
+            <span aria-hidden="true">⋮</span>
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

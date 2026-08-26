@@ -24,6 +24,7 @@
     "@gblp/circle-of-fifths": "^0.4.0",
     "@gblp/soloin": "^0.2.0",
     "rxjs": "~7.8.0",
+    "smplr": "^1.0.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

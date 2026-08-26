@@ -46,6 +46,12 @@
   &.playing {
     animation: metronome-pulse var(--metronome-beat, 0.5s) ease-out infinite;
   }
+
+  // Beat 1 of the measure gets a bigger, brighter flash than the regular
+  // per-beat glow above — higher specificity wins for the ~150ms it's on.
+  &.playing.accent {
+    animation: metronome-accent-pulse 0.15s ease-out;
+  }
 }
 
 @keyframes metronome-pulse {
@@ -60,8 +66,18 @@
   }
 }
 
+@keyframes metronome-accent-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--chords-highlight, var(--chords-primary)) 85%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 14px color-mix(in srgb, var(--chords-highlight, var(--chords-primary)) 0%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .metronome-toggle.playing {
+  .metronome-toggle.playing,
+  .metronome-toggle.playing.accent {
     animation: none;
   }
 }
@@ -77,6 +93,10 @@
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 750;
+
+  &:has(:focus-visible) {
+    border-color: var(--chords-primary);
+  }
 }
 
 .metronome-bpm {
@@ -90,5 +110,70 @@
 
   &:focus-visible {
     outline: none;
+  }
+}
+
+.metronome-time-sig {
+  appearance: none;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  option {
+    color: var(--chords-text);
+    background: var(--chords-surface);
+  }
+}
+
+.metronome-time-sig-label {
+  cursor: pointer;
+
+  span {
+    font-size: 0.7em;
+    color: var(--chords-muted);
+  }
+}
+
+.metronome-volume {
+  position: relative;
+}
+
+.volume-icon {
+  width: 16px;
+  height: 16px;
+
+  polygon {
+    fill: currentColor;
+  }
+}
+
+.metronome-volume-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 12px;
+  background: var(--chords-surface);
+  border: 1px solid var(--chords-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--chords-text) 20%, transparent);
+}
+
+.metronome-volume-slider {
+  width: 100px;
+  accent-color: var(--chords-primary);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--chords-primary);
+    outline-offset: 2px;
   }
 }

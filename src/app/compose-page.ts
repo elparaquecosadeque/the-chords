@@ -5,6 +5,7 @@ import { ChordFinderComponent } from '@gblp/chord-finder';
 import { detectKey } from '@gblp/music-theory';
 import { SoloinComponent } from '@gblp/soloin';
 
+import { BackingTrack } from './backing-track';
 import { LocalizationService } from './localization.service';
 import { PreferencesService } from './preferences.service';
 
@@ -21,7 +22,7 @@ const MINOR_PC_TO_CIRCLE_INDEX: Record<number, number> = {
 };
 
 @Component({
-  imports: [ChordFinderComponent, CircleOfFifthsComponent, CircleOfFifthsWheel, SoloinComponent, BassNotesPage],
+  imports: [ChordFinderComponent, CircleOfFifthsComponent, CircleOfFifthsWheel, SoloinComponent, BassNotesPage, BackingTrack],
   templateUrl: './compose-page.html',
   styleUrl: './compose-page.scss',
 })
@@ -54,6 +55,10 @@ export class ComposePage {
   });
 
   readonly liveCircleType = computed(() => this.liveDetectedKey()?.mode ?? null);
+
+  // Feeds the backing track, which stays mounted across tabs (transversal to the
+  // 4-tab flow) — reads the same live Rhythm-tab query as the circle preview above.
+  readonly rhythmProgression = computed(() => this.chordFinder()?.query() ?? '');
 
   // ponytail: Soloin/Bass Notes ship with their own non-empty demo progression, so "seed only if
   // target is empty" never fires for them. Track seeding explicitly per tab instead, once per page load.

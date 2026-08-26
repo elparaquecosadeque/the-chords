@@ -21,6 +21,8 @@
 
   <p class="compose-step-description">{{ localization.languageDictionary().composePage.descriptions[activeTab()] }}</p>
 
+  <app-backing-track [progression]="rhythmProgression()" />
+
   <div class="compose-panel" [hidden]="activeTab() !== 'rhythm'">
     <div class="rhythm-layout">
       <the-chords-chord-finder [language]="preferences.language()" />

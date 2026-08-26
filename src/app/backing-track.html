@@ -1,33 +1,80 @@
 <div class="backing-track">
   <div class="backing-track-controls">
-    <button
-      type="button"
-      role="switch"
-      class="backing-track-toggle"
-      [attr.aria-checked]="enabled()"
-      [disabled]="loading()"
-      [attr.aria-label]="enabled() ? text().backingTrack.disable : text().backingTrack.enable"
-      (click)="toggle()"
-    >
-      @if (loading()) {
-        <span class="backing-track-spinner" aria-hidden="true"></span>
-      } @else {
-        <span aria-hidden="true">{{ enabled() ? '●' : '○' }}</span>
-      }
-      {{ text().backingTrack.title }}
-    </button>
-    @if (hasChords()) {
+    <div class="backing-track-controls-group">
       <button
         type="button"
         role="switch"
-        class="backing-track-sync"
-        [attr.aria-checked]="synced()"
-        [attr.aria-label]="text().backingTrack.sync"
-        (click)="toggleSync()"
+        class="backing-track-toggle"
+        [attr.aria-checked]="enabled()"
+        [disabled]="loading()"
+        [attr.aria-label]="enabled() ? text().backingTrack.disable : text().backingTrack.enable"
+        (click)="toggle()"
       >
-        <span aria-hidden="true">{{ synced() ? '●' : '○' }}</span>
-        {{ text().backingTrack.sync }}
+        @if (loading()) {
+          <span class="backing-track-spinner" aria-hidden="true"></span>
+        } @else {
+          <span aria-hidden="true">{{ enabled() ? '●' : '○' }}</span>
+        }
+        {{ text().backingTrack.title }}
       </button>
+      <div class="backing-track-instruments" role="radiogroup" [attr.aria-label]="text().backingTrack.instrumentLabel">
+        @for (id of instrumentIds; track id) {
+          <button
+            type="button"
+            role="radio"
+            class="backing-track-instrument"
+            [attr.aria-checked]="instrument() === id"
+            [disabled]="loading()"
+            (click)="selectInstrument(id)"
+          >
+            {{ text().backingTrack.instruments[id] }}
+          </button>
+        }
+      </div>
+    </div>
+    @if (hasChords() || instrument() === 'guitar') {
+      <div class="backing-track-controls-group">
+        @if (hasChords()) {
+          <button
+            type="button"
+            role="switch"
+            class="backing-track-sync"
+            [attr.aria-checked]="synced()"
+            [attr.aria-label]="text().backingTrack.sync"
+            (click)="toggleSync()"
+          >
+            <span aria-hidden="true">{{ synced() ? '●' : '○' }}</span>
+            {{ text().backingTrack.sync }}
+          </button>
+        }
+        @if (instrument() === 'guitar') {
+          <div class="backing-track-instruments" role="radiogroup" [attr.aria-label]="text().backingTrack.strum.label">
+            @for (pattern of strumPatterns; track pattern) {
+              <button
+                type="button"
+                role="radio"
+                class="backing-track-instrument"
+                [attr.aria-checked]="strumPattern() === pattern"
+                (click)="setStrumPattern(pattern)"
+              >
+                {{ text().backingTrack.strum[pattern] }}
+              </button>
+            }
+          </div>
+        } @else {
+          <button
+            type="button"
+            role="switch"
+            class="backing-track-sync"
+            [attr.aria-checked]="articulation() === 'sustain'"
+            [attr.aria-label]="text().backingTrack.articulation.label"
+            (click)="toggleArticulation()"
+          >
+            <span aria-hidden="true">{{ articulation() === 'sustain' ? '●' : '○' }}</span>
+            {{ articulation() === 'sustain' ? text().backingTrack.articulation.sustain : text().backingTrack.articulation.restrike }}
+          </button>
+        }
+      </div>
     }
   </div>
 
@@ -43,7 +90,7 @@
         <div
           class="backing-track-block"
           role="listitem"
-          [style.--bars]="entry.bars"
+          [style.--beats]="entry.beats"
           [class.active]="activeSlot() === slot"
           [class.pulse]="activeSlot() === slot && beatPulse()"
         >
@@ -59,15 +106,15 @@
           </button>
           <span class="backing-track-chord-content">
             <span class="backing-track-chord-name">{{ entry.chord.raw }}</span>
-            <span class="backing-track-bars">{{ entry.bars }} {{ text().backingTrack.bars }}</span>
+            <span class="backing-track-beats">{{ entry.beats }} {{ text().backingTrack.beats }}</span>
           </span>
           <button
             type="button"
             class="backing-track-handle backing-track-resize"
             [attr.aria-label]="text().backingTrack.resizeChord + ': ' + entry.chord.raw"
             (pointerdown)="onResizeDragStart($event, slot)"
-            (keydown.arrowleft)="shrinkBars(slot)"
-            (keydown.arrowright)="growBars(slot)"
+            (keydown.arrowleft)="shrinkBeats(slot)"
+            (keydown.arrowright)="growBeats(slot)"
           >
             <span aria-hidden="true">⋮</span>
           </button>

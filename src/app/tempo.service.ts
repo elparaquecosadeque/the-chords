@@ -5,6 +5,11 @@ export interface BeatEvent {
   beatIndex: number;
   measureIndex: number;
   isAccent: boolean;
+  // Beats elapsed since the transport last started, ignoring measure
+  // boundaries — unlike measureIndex/beatIndex, unaffected by beatsPerMeasure
+  // changing mid-playback. Lets consumers (e.g. the backing track's timeline)
+  // work in plain beat counts instead of bars.
+  totalBeatIndex: number;
 }
 
 export type BeatListener = (event: BeatEvent) => void;
@@ -25,6 +30,7 @@ export class TempoService {
   private nextNoteTime = 0;
   private beatIndex = 0;
   private measureIndex = 0;
+  private totalBeatIndex = 0;
   private readonly listeners = new Set<BeatListener>();
   private readonly lookaheadMs = 25;
   private readonly scheduleAheadTime = 0.1;
@@ -61,6 +67,7 @@ export class TempoService {
     this.nextNoteTime = ctx.currentTime;
     this.beatIndex = 0;
     this.measureIndex = 0;
+    this.totalBeatIndex = 0;
     this.isPlaying.set(true);
     this.schedulerId = window.setInterval(() => this.scheduler(), this.lookaheadMs);
   }
@@ -81,9 +88,11 @@ export class TempoService {
         beatIndex: this.beatIndex,
         measureIndex: this.measureIndex,
         isAccent: this.beatIndex === 0,
+        totalBeatIndex: this.totalBeatIndex,
       };
       for (const listener of this.listeners) listener(event);
       this.beatIndex++;
+      this.totalBeatIndex++;
       if (this.beatIndex >= this.beatsPerMeasure()) {
         this.beatIndex = 0;
         this.measureIndex++;

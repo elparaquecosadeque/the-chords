@@ -1,6 +1,6 @@
 import { Component, OnDestroy, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { buildChordTones, parseChordName, type ParsedChord } from '@gblp/music-theory';
-import { SplendidGrandPiano } from 'smplr';
+import { Soundfont, SplendidGrandPiano, type Smplr } from 'smplr';
 
 import { LocalizationService } from './localization.service';
 import { TempoService, type BeatEvent } from './tempo.service';
@@ -8,8 +8,16 @@ import { TempoService, type BeatEvent } from './tempo.service';
 export interface TimelineSlot {
   index: number;
   chord: ParsedChord;
-  bars: number;
+  beats: number;
 }
+
+export type InstrumentId = 'piano' | 'guitar' | 'synth';
+export type Articulation = 'restrike' | 'sustain';
+export type StrumPattern = 'none' | 'down' | 'alternating';
+
+const INSTRUMENT_IDS: readonly InstrumentId[] = ['piano', 'guitar', 'synth'];
+const STRUM_PATTERNS: readonly StrumPattern[] = ['none', 'down', 'alternating'];
+const STRUM_STAGGER_SECONDS = 0.018;
 
 // Voices a chord's pitch classes as a close-position stack starting at the
 // chord's own root, anchored near `rootMidi` — simple ascending spread, no
@@ -20,11 +28,12 @@ function voiceChordMidi(tones: readonly number[], root: number, rootMidi: number
 }
 
 const ROOT_MIDI = 48; // C3 — sits under the melody range, a rhythmic/harmonic bed.
-// Pixel-per-bar unit for pointer-drag math on the timeline. Must match the
-// 72px literal in .backing-track-block's width formula in backing-track.scss
-// — wide enough for a chord name with an extension (e.g. "C#m7b5") to sit
-// comfortably in a single 1-bar block.
-const BAR_WIDTH_PX = 72;
+// Pixel-per-beat unit for pointer-drag math on the timeline. Must match the
+// 32px literal in .backing-track-block's width formula in backing-track.scss.
+// A single beat's raw width sits below the 112px legibility floor there, so
+// short (1–3 beat) slots render at that floor and only visibly grow past it —
+// an accepted trade-off for keeping per-beat resize simple.
+const BEAT_WIDTH_PX = 32;
 
 @Component({
   selector: 'app-backing-track',
@@ -43,6 +52,18 @@ export class BackingTrack implements OnDestroy {
   readonly enabled = signal(false);
   readonly loading = signal(false);
 
+  readonly instrumentIds = INSTRUMENT_IDS;
+  readonly instrument = signal<InstrumentId>('piano');
+
+  // Piano/synth only — re-strike the chord every beat (default, matches the
+  // metronome's own click) or strike once per timeline slot and hold it.
+  readonly articulation = signal<Articulation>('restrike');
+
+  // Guitar only — staggers each chord tone's start time to simulate a strum
+  // instead of a simultaneous block chord.
+  readonly strumPatterns = STRUM_PATTERNS;
+  readonly strumPattern = signal<StrumPattern>('none');
+
   private readonly chords = computed(() =>
     this.progression()
       .split(',')
@@ -55,20 +76,22 @@ export class BackingTrack implements OnDestroy {
   readonly hasChords = computed(() => this.chords().length > 0);
 
   // Timeline model: `order` is a permutation of indices into `chords()`, and
-  // `barsByChordIndex` maps each chord-index to a bar length (default 1).
-  // Chord identity always comes live from `chords()` — only order/length are
-  // ever frozen — so editing the typed progression's chord names/qualities
-  // always shows up here immediately, synced or not.
+  // `beatsByChordIndex` maps each chord-index to a length in beats (default:
+  // one full bar at the current time signature). Chord identity always comes
+  // live from `chords()` — only order/length are ever frozen — so editing the
+  // typed progression's chord names/qualities always shows up here
+  // immediately, synced or not.
   readonly synced = signal(true);
   private readonly order = signal<number[]>([]);
-  private readonly barsByChordIndex = signal<Record<number, number>>({});
+  private readonly beatsByChordIndex = signal<Record<number, number>>({});
 
   readonly timeline = computed<TimelineSlot[]>(() => {
     const chords = this.chords();
-    const bars = this.barsByChordIndex();
+    const beats = this.beatsByChordIndex();
+    const defaultBeats = this.tempo.beatsPerMeasure();
     return this.order()
       .filter((i) => i < chords.length)
-      .map((i) => ({ index: i, chord: chords[i], bars: bars[i] ?? 1 }));
+      .map((i) => ({ index: i, chord: chords[i], beats: beats[i] ?? defaultBeats }));
   });
 
   // Highlights whichever timeline slot is currently sounding, pulsing once
@@ -77,39 +100,42 @@ export class BackingTrack implements OnDestroy {
   readonly activeSlot = signal<number | null>(null);
   readonly beatPulse = signal(false);
 
-  private piano: SplendidGrandPiano | null = null;
+  // Keyed by InstrumentId so switching back to an already-loaded instrument
+  // is instant instead of re-fetching its samples.
+  private readonly loadedInstruments = new Map<InstrumentId, Smplr>();
+  private activeInstrument: Smplr | null = null;
   private unsubscribeBeat: (() => void) | null = null;
   private readonly pulseTimeouts = new Set<ReturnType<typeof setTimeout>>();
 
   constructor() {
     // Keeps the timeline aligned with the typed progression. While synced,
-    // any text change resets it to equal 1-bar slots in text order. While
+    // any text change resets it to equal full-bar slots in text order. While
     // unsynced (the user has dragged/keyed a resize or reorder), a text
     // change only reconciles: chords still present keep their custom
-    // position/length, new chords are appended at 1 bar, removed ones drop.
-    // `order`/`barsByChordIndex` are read here only to merge — reading them
-    // untracked keeps this effect reacting to `chords`/`synced` alone. Without
-    // it, this effect's own writes to those two signals would re-trigger
-    // itself (each .set() below is a fresh object/array reference) and hang
-    // the tab in an infinite loop.
+    // position/length, new chords are appended at a full bar, removed ones
+    // drop. `order`/`beatsByChordIndex` are read here only to merge — reading
+    // them untracked keeps this effect reacting to `chords`/`synced` alone.
+    // Without it, this effect's own writes to those two signals would
+    // re-trigger itself (each .set() below is a fresh object/array
+    // reference) and hang the tab in an infinite loop.
     effect(() => {
       const chords = this.chords();
       const isSynced = this.synced();
       untracked(() => {
         if (isSynced) {
           this.order.set(chords.map((_, i) => i));
-          this.barsByChordIndex.set({});
+          this.beatsByChordIndex.set({});
           return;
         }
         const kept = this.order().filter((i) => i < chords.length);
         const added = chords.map((_, i) => i).filter((i) => !kept.includes(i));
         this.order.set([...kept, ...added]);
-        const oldBars = this.barsByChordIndex();
-        const nextBars: Record<number, number> = {};
+        const oldBeats = this.beatsByChordIndex();
+        const nextBeats: Record<number, number> = {};
         for (const i of kept) {
-          if (oldBars[i] !== undefined) nextBars[i] = oldBars[i];
+          if (oldBeats[i] !== undefined) nextBeats[i] = oldBeats[i];
         }
-        this.barsByChordIndex.set(nextBars);
+        this.beatsByChordIndex.set(nextBeats);
       });
     });
   }
@@ -117,10 +143,25 @@ export class BackingTrack implements OnDestroy {
   toggle(): void {
     this.enabled.update((v) => !v);
     if (this.enabled()) {
-      void this.ensurePiano();
+      void this.activateInstrument(this.instrument());
     } else {
       this.clearVisualBeat();
     }
+  }
+
+  selectInstrument(id: InstrumentId): void {
+    this.instrument.set(id);
+    if (this.enabled()) {
+      void this.activateInstrument(id);
+    }
+  }
+
+  toggleArticulation(): void {
+    this.articulation.update((a) => (a === 'restrike' ? 'sustain' : 'restrike'));
+  }
+
+  setStrumPattern(pattern: StrumPattern): void {
+    this.strumPattern.set(pattern);
   }
 
   toggleSync(): void {
@@ -134,25 +175,25 @@ export class BackingTrack implements OnDestroy {
   private forceResync(): void {
     const chords = this.chords();
     this.order.set(chords.map((_, i) => i));
-    this.barsByChordIndex.set({});
+    this.beatsByChordIndex.set({});
     this.synced.set(true);
   }
 
-  growBars(slot: number): void {
+  growBeats(slot: number): void {
     const entry = this.timeline()[slot];
-    if (entry) this.setBars(slot, entry.bars + 1);
+    if (entry) this.setBeats(slot, entry.beats + 1);
   }
 
-  shrinkBars(slot: number): void {
+  shrinkBeats(slot: number): void {
     const entry = this.timeline()[slot];
-    if (entry) this.setBars(slot, entry.bars - 1);
+    if (entry) this.setBeats(slot, entry.beats - 1);
   }
 
-  private setBars(slot: number, bars: number): void {
+  private setBeats(slot: number, beats: number): void {
     const entry = this.timeline()[slot];
     if (!entry) return;
-    const clamped = Math.max(1, bars);
-    this.barsByChordIndex.update((m) => ({ ...m, [entry.index]: clamped }));
+    const clamped = Math.max(1, beats);
+    this.beatsByChordIndex.update((m) => ({ ...m, [entry.index]: clamped }));
     this.synced.set(false);
   }
 
@@ -178,10 +219,10 @@ export class BackingTrack implements OnDestroy {
     event.preventDefault();
     (event.currentTarget as HTMLElement).focus();
     const startX = event.clientX;
-    const startBars = this.timeline()[slot]?.bars ?? 1;
+    const startBeats = this.timeline()[slot]?.beats ?? 1;
     const onMove = (e: PointerEvent) => {
-      const deltaBars = Math.round((e.clientX - startX) / BAR_WIDTH_PX);
-      this.setBars(slot, startBars + deltaBars);
+      const deltaBeats = Math.round((e.clientX - startX) / BEAT_WIDTH_PX);
+      this.setBeats(slot, startBeats + deltaBeats);
     };
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
@@ -196,11 +237,11 @@ export class BackingTrack implements OnDestroy {
     (event.currentTarget as HTMLElement).focus();
     const startX = event.clientX;
     let currentSlot = slot;
-    const startOffset = this.cumulativeBarsBefore(slot);
+    const startOffset = this.cumulativeBeatsBefore(slot);
     const onMove = (e: PointerEvent) => {
-      const deltaBars = Math.round((e.clientX - startX) / BAR_WIDTH_PX);
-      const targetOffset = Math.max(0, startOffset + deltaBars);
-      const targetSlot = this.slotAtBarOffset(targetOffset);
+      const deltaBeats = Math.round((e.clientX - startX) / BEAT_WIDTH_PX);
+      const targetOffset = Math.max(0, startOffset + deltaBeats);
+      const targetSlot = this.slotAtBeatOffset(targetOffset);
       if (targetSlot !== currentSlot) {
         this.moveSlot(currentSlot, targetSlot);
         currentSlot = targetSlot;
@@ -214,54 +255,111 @@ export class BackingTrack implements OnDestroy {
     window.addEventListener('pointerup', onUp);
   }
 
-  private cumulativeBarsBefore(slot: number): number {
+  private cumulativeBeatsBefore(slot: number): number {
     return this.timeline()
       .slice(0, slot)
-      .reduce((sum, e) => sum + e.bars, 0);
+      .reduce((sum, e) => sum + e.beats, 0);
   }
 
-  private slotAtBarOffset(offset: number): number {
+  private slotAtBeatOffset(offset: number): number {
     const entries = this.timeline();
     let acc = 0;
     for (let i = 0; i < entries.length; i++) {
-      acc += entries[i].bars;
+      acc += entries[i].beats;
       if (offset < acc) return i;
     }
     return entries.length - 1;
   }
 
-  private async ensurePiano(): Promise<void> {
-    if (this.piano || this.loading()) return;
+  private createInstrument(id: InstrumentId): Smplr {
+    const ctx = this.tempo.audioContext;
+    switch (id) {
+      case 'guitar':
+        return Soundfont(ctx, { instrument: 'acoustic_guitar_steel' });
+      case 'synth':
+        return Soundfont(ctx, { instrument: 'lead_2_sawtooth' });
+      case 'piano':
+        return SplendidGrandPiano(ctx);
+    }
+  }
+
+  private async activateInstrument(id: InstrumentId): Promise<void> {
     this.loading.set(true);
-    const piano = new SplendidGrandPiano(this.tempo.audioContext);
-    await piano.ready;
-    this.piano = piano;
+    let instrument = this.loadedInstruments.get(id);
+    if (!instrument) {
+      instrument = this.createInstrument(id);
+      await instrument.ready;
+      this.loadedInstruments.set(id, instrument);
+    }
+    // The user may have disabled the track or picked a different instrument
+    // while this one was still loading — don't let a stale load win.
+    if (!this.enabled() || this.instrument() !== id) {
+      this.loading.set(false);
+      return;
+    }
+    this.activeInstrument = instrument;
     this.loading.set(false);
-    this.unsubscribeBeat = this.tempo.onBeat((event) => this.onBeat(event));
+    this.unsubscribeBeat ??= this.tempo.onBeat((event) => this.onBeat(event));
   }
 
   private onBeat(event: BeatEvent): void {
-    if (!this.enabled() || !this.piano) return;
+    if (!this.enabled() || !this.activeInstrument) return;
     const entries = this.timeline();
     if (!entries.length) return;
-    const totalBars = entries.reduce((sum, e) => sum + e.bars, 0);
-    let pos = event.measureIndex % totalBars;
+    const totalBeats = entries.reduce((sum, e) => sum + e.beats, 0);
+    let pos = event.totalBeatIndex % totalBeats;
     let slot = entries.length - 1;
     for (let i = 0; i < entries.length; i++) {
-      if (pos < entries[i].bars) {
+      if (pos < entries[i].beats) {
         slot = i;
         break;
       }
-      pos -= entries[i].bars;
+      pos -= entries[i].beats;
     }
+    const isFirstBeatOfSlot = pos === 0;
     this.scheduleVisualBeat(event.time, slot);
+
     const entry = entries[slot];
+    const beatSeconds = 60 / this.tempo.bpm();
+    const instrument = this.instrument();
+
+    if (instrument === 'guitar') {
+      this.strumChord(entry, event.time, event.totalBeatIndex, beatSeconds);
+      return;
+    }
+
+    // Piano/synth: re-strike every beat (default), or strike once at the
+    // start of the slot and hold it for the slot's full duration.
+    if (this.articulation() === 'sustain') {
+      if (!isFirstBeatOfSlot) return;
+      this.playChord(entry, event.time, entry.beats * beatSeconds * 0.95);
+    } else {
+      this.playChord(entry, event.time, beatSeconds * 0.9);
+    }
+  }
+
+  private playChord(entry: TimelineSlot, time: number, duration: number): void {
+    if (!this.activeInstrument) return;
     const tones = buildChordTones(entry.chord.root, entry.chord.quality);
     const midiNotes = voiceChordMidi(tones, entry.chord.root, ROOT_MIDI);
-    const beatSeconds = 60 / this.tempo.bpm();
     for (const note of midiNotes) {
-      this.piano.start({ note, time: event.time, duration: beatSeconds * 0.9 });
+      this.activeInstrument.start({ note, time, duration });
     }
+  }
+
+  private strumChord(entry: TimelineSlot, time: number, totalBeatIndex: number, beatSeconds: number): void {
+    if (!this.activeInstrument) return;
+    const tones = buildChordTones(entry.chord.root, entry.chord.quality);
+    const midiNotes = voiceChordMidi(tones, entry.chord.root, ROOT_MIDI);
+    const duration = beatSeconds * 0.9;
+    const pattern = this.strumPattern();
+    const direction =
+      pattern === 'alternating' ? (totalBeatIndex % 2 === 0 ? 'down' : 'up') : 'down';
+    const ordered = pattern === 'none' ? midiNotes : direction === 'down' ? midiNotes : [...midiNotes].reverse();
+    ordered.forEach((note, i) => {
+      const stagger = pattern === 'none' ? 0 : i * STRUM_STAGGER_SECONDS;
+      this.activeInstrument!.start({ note, time: time + stagger, duration });
+    });
   }
 
   private scheduleVisualBeat(time: number, slot: number): void {

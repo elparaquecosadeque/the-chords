@@ -9,10 +9,58 @@
   gap: 8px;
 }
 
+// Two loose clusters — "what plays" (enable + instrument) and "how it plays"
+// (sync + articulation/strum) — separated by a wider gap than the pills
+// within each cluster get, so proximity alone reads as grouping without a
+// visible divider.
 .backing-track-controls {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.backing-track-controls-group {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.backing-track-instruments {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--chords-surface);
+  border: 1px solid var(--chords-border);
+  border-radius: 999px;
+}
+
+.backing-track-instrument {
+  padding: 6px 12px;
+  color: var(--chords-muted);
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    color: var(--chords-text);
+    outline: none;
+  }
+
+  &[aria-checked='true'] {
+    color: var(--chords-on-primary);
+    background: var(--chords-primary);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.75;
+  }
 }
 
 // Matches .rhythm-circle-preview-toggle's pill+dot switch language exactly,
@@ -110,20 +158,20 @@
   scrollbar-color: var(--chords-border) transparent;
 }
 
-// --bars drives width; BAR_WIDTH_PX in backing-track.ts must match the 72px
-// increment below so pointer-drag deltas map 1:1 to bar counts. The 112px
-// floor is a legibility minimum (not a timeline unit) — without it, a 1-bar
+// --beats drives width; BEAT_WIDTH_PX in backing-track.ts must match the 32px
+// increment below so pointer-drag deltas map 1:1 to beat counts. The 112px
+// floor is a legibility minimum (not a timeline unit) — without it, a 1-beat
 // block has only ~20px left for the chord name once both handles and padding
 // are accounted for, clipping anything longer than one character (e.g.
-// "C#m7b5" truncated to "C.."). Blocks only grow bar-proportionally past 1.5
-// bars; below that the floor wins, same trade-off real DAW timelines make
-// for very short clips.
+// "C#m7b5" truncated to "C.."). At 32px/beat, a 1–3 beat slot sits at that
+// floor and only visibly grows past ~4 beats — an accepted trade-off for
+// per-beat (not just per-bar) resize; the exact count is always in the label.
 .backing-track-block {
   display: flex;
   align-items: center;
   gap: 2px;
   flex: 0 0 auto;
-  width: max(112px, calc(var(--bars, 1) * 72px));
+  width: max(112px, calc(var(--beats, 1) * 32px));
   padding: 4px;
   color: var(--chords-text);
   background: var(--chords-surface);
@@ -186,7 +234,7 @@
   white-space: nowrap;
 }
 
-.backing-track-bars {
+.backing-track-beats {
   color: var(--chords-muted);
   font-size: 0.62rem;
   font-weight: 600;

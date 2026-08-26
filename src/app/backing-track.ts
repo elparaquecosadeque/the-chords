@@ -11,6 +11,25 @@ export interface TimelineSlot {
   beats: number;
 }
 
+// A section of the song: `name` is null for the plain "Am, G, C, F" mode
+// (a single implicit, unnamed section) and a string once the typed
+// progression uses "Name: chords; Name: chords;" syntax — detected purely by
+// the presence of a ':' in the text, so the two modes share one rendering
+// and playback path instead of being separate features bolted together.
+export interface SongSection {
+  key: number;
+  name: string | null;
+  chords: ParsedChord[];
+}
+
+interface SectionState {
+  order: number[];
+  beats: Record<number, number>;
+  synced: boolean;
+  repeatCount: number;
+  infinite: boolean;
+}
+
 export type InstrumentId = 'piano' | 'guitar' | 'synth';
 export type Articulation = 'restrike' | 'sustain';
 export type StrumPattern = 'none' | 'down' | 'alternating';
@@ -18,6 +37,7 @@ export type StrumPattern = 'none' | 'down' | 'alternating';
 const INSTRUMENT_IDS: readonly InstrumentId[] = ['piano', 'guitar', 'synth'];
 const STRUM_PATTERNS: readonly StrumPattern[] = ['none', 'down', 'alternating'];
 const STRUM_STAGGER_SECONDS = 0.018;
+const MAX_REPEAT_COUNT = 5;
 
 // Voices a chord's pitch classes as a close-position stack starting at the
 // chord's own root, anchored near `rootMidi` — simple ascending spread, no
@@ -34,6 +54,37 @@ const ROOT_MIDI = 48; // C3 — sits under the melody range, a rhythmic/harmonic
 // short (1–3 beat) slots render at that floor and only visibly grow past it —
 // an accepted trade-off for keeping per-beat resize simple.
 const BEAT_WIDTH_PX = 32;
+
+function parseChordList(raw: string): ParsedChord[] {
+  return raw
+    .split(',')
+    .map((c) => c.trim())
+    .filter(Boolean)
+    .map((c) => parseChordName(c))
+    .filter((c): c is NonNullable<typeof c> => c !== null);
+}
+
+// "Verse: Am, G, C, F; Chorus: F, G, C, C;" — split on ';', each segment
+// "Name: chords" split on the first ':'. Segments with no colon, an empty
+// name, or no parseable chords are skipped rather than surfaced as errors —
+// consistent with how a single unparseable chord is silently dropped
+// elsewhere in this component.
+function parseSongStructure(raw: string): SongSection[] {
+  return raw
+    .split(';')
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .map((segment, i): SongSection | null => {
+      const colonIndex = segment.indexOf(':');
+      if (colonIndex === -1) return null;
+      const name = segment.slice(0, colonIndex).trim();
+      if (!name) return null;
+      const chords = parseChordList(segment.slice(colonIndex + 1));
+      if (!chords.length) return null;
+      return { key: i, name, chords };
+    })
+    .filter((s): s is SongSection => s !== null);
+}
 
 @Component({
   selector: 'app-backing-track',
@@ -64,39 +115,33 @@ export class BackingTrack implements OnDestroy {
   readonly strumPatterns = STRUM_PATTERNS;
   readonly strumPattern = signal<StrumPattern>('none');
 
-  private readonly chords = computed(() =>
-    this.progression()
-      .split(',')
-      .map((c) => c.trim())
-      .filter(Boolean)
-      .map((raw) => parseChordName(raw))
-      .filter((c): c is NonNullable<typeof c> => c !== null),
-  );
-
-  readonly hasChords = computed(() => this.chords().length > 0);
-
-  // Timeline model: `order` is a permutation of indices into `chords()`, and
-  // `beatsByChordIndex` maps each chord-index to a length in beats (default:
-  // one full bar at the current time signature). Chord identity always comes
-  // live from `chords()` — only order/length are ever frozen — so editing the
-  // typed progression's chord names/qualities always shows up here
-  // immediately, synced or not.
-  readonly synced = signal(true);
-  private readonly order = signal<number[]>([]);
-  private readonly beatsByChordIndex = signal<Record<number, number>>({});
-
-  readonly timeline = computed<TimelineSlot[]>(() => {
-    const chords = this.chords();
-    const beats = this.beatsByChordIndex();
-    const defaultBeats = this.tempo.beatsPerMeasure();
-    return this.order()
-      .filter((i) => i < chords.length)
-      .map((i) => ({ index: i, chord: chords[i], beats: beats[i] ?? defaultBeats }));
+  // Detected purely from the text: any ':' means "Name: chords;" song-structure
+  // syntax (one row per section, each with its own repeat controls); no ':'
+  // means the plain single progression, modeled as one implicit unnamed section.
+  readonly sections = computed<SongSection[]>(() => {
+    const raw = this.progression();
+    if (raw.includes(':')) return parseSongStructure(raw);
+    const chords = parseChordList(raw);
+    return chords.length ? [{ key: 0, name: null, chords }] : [];
   });
 
-  // Highlights whichever timeline slot is currently sounding, pulsing once
-  // per beat — timed to actual audio playback via the same delay-compensated
+  readonly hasChords = computed(() => this.sections().length > 0);
+  readonly isSongMode = computed(() => {
+    const sections = this.sections();
+    return sections.length > 0 && sections[0].name !== null;
+  });
+
+  private readonly sectionStates = signal<Map<number, SectionState>>(new Map());
+
+  readonly allSynced = computed(() => {
+    const states = this.sectionStates();
+    return this.sections().every((s) => states.get(s.key)?.synced ?? true);
+  });
+
+  // Highlights whichever section+slot is currently sounding, pulsing once per
+  // beat — timed to actual audio playback via the same delay-compensated
   // setTimeout technique the metronome's accent pulse uses.
+  readonly activeSectionKey = signal<number | null>(null);
   readonly activeSlot = signal<number | null>(null);
   readonly beatPulse = signal(false);
 
@@ -108,36 +153,72 @@ export class BackingTrack implements OnDestroy {
   private readonly pulseTimeouts = new Set<ReturnType<typeof setTimeout>>();
 
   constructor() {
-    // Keeps the timeline aligned with the typed progression. While synced,
-    // any text change resets it to equal full-bar slots in text order. While
-    // unsynced (the user has dragged/keyed a resize or reorder), a text
-    // change only reconciles: chords still present keep their custom
-    // position/length, new chords are appended at a full bar, removed ones
-    // drop. `order`/`beatsByChordIndex` are read here only to merge — reading
-    // them untracked keeps this effect reacting to `chords`/`synced` alone.
-    // Without it, this effect's own writes to those two signals would
-    // re-trigger itself (each .set() below is a fresh object/array
+    // Keeps every section's timeline aligned with its own chord list. While a
+    // section is synced, any text change resets it to equal full-bar slots in
+    // its written order. While unsynced (the user has dragged/keyed a resize
+    // or reorder on that section), a text change only reconciles: chords
+    // still present keep their custom position/length, new ones are appended
+    // at a full bar, removed ones drop. New sections get a fresh synced
+    // state; sections no longer present are garbage-collected. `sectionStates`
+    // is read here only to merge — reading it untracked keeps this effect
+    // reacting to `sections` alone. Without it, this effect's own writes
+    // would re-trigger itself (each .set() below is a fresh Map/object
     // reference) and hang the tab in an infinite loop.
     effect(() => {
-      const chords = this.chords();
-      const isSynced = this.synced();
+      const sections = this.sections();
       untracked(() => {
-        if (isSynced) {
-          this.order.set(chords.map((_, i) => i));
-          this.beatsByChordIndex.set({});
-          return;
+        const current = this.sectionStates();
+        const next = new Map(current);
+        const validKeys = new Set(sections.map((s) => s.key));
+        for (const key of next.keys()) {
+          if (!validKeys.has(key)) next.delete(key);
         }
-        const kept = this.order().filter((i) => i < chords.length);
-        const added = chords.map((_, i) => i).filter((i) => !kept.includes(i));
-        this.order.set([...kept, ...added]);
-        const oldBeats = this.beatsByChordIndex();
-        const nextBeats: Record<number, number> = {};
-        for (const i of kept) {
-          if (oldBeats[i] !== undefined) nextBeats[i] = oldBeats[i];
+        for (const section of sections) {
+          const chords = section.chords;
+          const existing = next.get(section.key);
+          if (!existing) {
+            next.set(section.key, {
+              order: chords.map((_, i) => i),
+              beats: {},
+              synced: true,
+              repeatCount: 1,
+              infinite: false,
+            });
+            continue;
+          }
+          if (existing.synced) {
+            next.set(section.key, { ...existing, order: chords.map((_, i) => i), beats: {} });
+            continue;
+          }
+          const kept = existing.order.filter((i) => i < chords.length);
+          const added = chords.map((_, i) => i).filter((i) => !kept.includes(i));
+          const oldBeats = existing.beats;
+          const beats: Record<number, number> = {};
+          for (const i of kept) {
+            if (oldBeats[i] !== undefined) beats[i] = oldBeats[i];
+          }
+          next.set(section.key, { ...existing, order: [...kept, ...added], beats });
         }
-        this.beatsByChordIndex.set(nextBeats);
+        this.sectionStates.set(next);
       });
     });
+  }
+
+  private sectionByKey(key: number): SongSection | undefined {
+    return this.sections().find((s) => s.key === key);
+  }
+
+  timelineFor(section: SongSection): TimelineSlot[] {
+    const state = this.sectionStates().get(section.key);
+    if (!state) return [];
+    const defaultBeats = this.tempo.beatsPerMeasure();
+    return state.order
+      .filter((i) => i < section.chords.length)
+      .map((i) => ({ index: i, chord: section.chords[i], beats: state.beats[i] ?? defaultBeats }));
+  }
+
+  private totalBeatsFor(section: SongSection): number {
+    return this.timelineFor(section).reduce((sum, e) => sum + e.beats, 0);
   }
 
   toggle(): void {
@@ -164,65 +245,119 @@ export class BackingTrack implements OnDestroy {
     this.strumPattern.set(pattern);
   }
 
-  toggleSync(): void {
-    if (this.synced()) {
-      this.synced.set(false);
+  toggleGlobalSync(): void {
+    if (this.allSynced()) {
+      this.sectionStates.update((map) => {
+        const next = new Map(map);
+        for (const [key, state] of next) next.set(key, { ...state, synced: false });
+        return next;
+      });
     } else {
-      this.forceResync();
+      this.forceResyncAll();
     }
   }
 
-  private forceResync(): void {
-    const chords = this.chords();
-    this.order.set(chords.map((_, i) => i));
-    this.beatsByChordIndex.set({});
-    this.synced.set(true);
+  private forceResyncAll(): void {
+    const sections = this.sections();
+    this.sectionStates.update((map) => {
+      const next = new Map(map);
+      for (const section of sections) {
+        const existing = next.get(section.key);
+        next.set(section.key, {
+          order: section.chords.map((_, i) => i),
+          beats: {},
+          synced: true,
+          repeatCount: existing?.repeatCount ?? 1,
+          infinite: existing?.infinite ?? false,
+        });
+      }
+      return next;
+    });
   }
 
-  growBeats(slot: number): void {
-    const entry = this.timeline()[slot];
-    if (entry) this.setBeats(slot, entry.beats + 1);
+  cycleRepeatCount(sectionKey: number): void {
+    this.updateSectionState(sectionKey, (s) => ({
+      ...s,
+      repeatCount: s.repeatCount >= MAX_REPEAT_COUNT ? 1 : s.repeatCount + 1,
+      infinite: false,
+    }));
   }
 
-  shrinkBeats(slot: number): void {
-    const entry = this.timeline()[slot];
-    if (entry) this.setBeats(slot, entry.beats - 1);
+  toggleInfinite(sectionKey: number): void {
+    this.updateSectionState(sectionKey, (s) => ({ ...s, infinite: !s.infinite }));
   }
 
-  private setBeats(slot: number, beats: number): void {
-    const entry = this.timeline()[slot];
+  repeatCountFor(sectionKey: number): number {
+    return this.sectionStates().get(sectionKey)?.repeatCount ?? 1;
+  }
+
+  isInfiniteFor(sectionKey: number): boolean {
+    return this.sectionStates().get(sectionKey)?.infinite ?? false;
+  }
+
+  growBeats(sectionKey: number, slot: number): void {
+    const section = this.sectionByKey(sectionKey);
+    if (!section) return;
+    const entry = this.timelineFor(section)[slot];
+    if (entry) this.setBeats(sectionKey, slot, entry.beats + 1);
+  }
+
+  shrinkBeats(sectionKey: number, slot: number): void {
+    const section = this.sectionByKey(sectionKey);
+    if (!section) return;
+    const entry = this.timelineFor(section)[slot];
+    if (entry) this.setBeats(sectionKey, slot, entry.beats - 1);
+  }
+
+  private setBeats(sectionKey: number, slot: number, beats: number): void {
+    const section = this.sectionByKey(sectionKey);
+    if (!section) return;
+    const entry = this.timelineFor(section)[slot];
     if (!entry) return;
     const clamped = Math.max(1, beats);
-    this.beatsByChordIndex.update((m) => ({ ...m, [entry.index]: clamped }));
-    this.synced.set(false);
+    this.updateSectionState(sectionKey, (s) => ({
+      ...s,
+      beats: { ...s.beats, [entry.index]: clamped },
+      synced: false,
+    }));
   }
 
-  moveLeft(slot: number): void {
-    this.moveSlot(slot, slot - 1);
+  moveLeft(sectionKey: number, slot: number): void {
+    this.moveSlot(sectionKey, slot, slot - 1);
   }
 
-  moveRight(slot: number): void {
-    this.moveSlot(slot, slot + 1);
+  moveRight(sectionKey: number, slot: number): void {
+    this.moveSlot(sectionKey, slot, slot + 1);
   }
 
-  private moveSlot(from: number, to: number): void {
-    const current = this.order();
-    if (to < 0 || to >= current.length || from === to) return;
-    const next = [...current];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    this.order.set(next);
-    this.synced.set(false);
+  private moveSlot(sectionKey: number, from: number, to: number): void {
+    const state = this.sectionStates().get(sectionKey);
+    if (!state || to < 0 || to >= state.order.length || from === to) return;
+    const nextOrder = [...state.order];
+    const [moved] = nextOrder.splice(from, 1);
+    nextOrder.splice(to, 0, moved);
+    this.updateSectionState(sectionKey, (s) => ({ ...s, order: nextOrder, synced: false }));
   }
 
-  onResizeDragStart(event: PointerEvent, slot: number): void {
+  private updateSectionState(key: number, updater: (s: SectionState) => SectionState): void {
+    this.sectionStates.update((map) => {
+      const existing = map.get(key);
+      if (!existing) return map;
+      const next = new Map(map);
+      next.set(key, updater(existing));
+      return next;
+    });
+  }
+
+  onResizeDragStart(event: PointerEvent, sectionKey: number, slot: number): void {
     event.preventDefault();
     (event.currentTarget as HTMLElement).focus();
+    const section = this.sectionByKey(sectionKey);
     const startX = event.clientX;
-    const startBeats = this.timeline()[slot]?.beats ?? 1;
+    const startBeats = section ? (this.timelineFor(section)[slot]?.beats ?? 1) : 1;
     const onMove = (e: PointerEvent) => {
       const deltaBeats = Math.round((e.clientX - startX) / BEAT_WIDTH_PX);
-      this.setBeats(slot, startBeats + deltaBeats);
+      this.setBeats(sectionKey, slot, startBeats + deltaBeats);
     };
     const onUp = () => {
       window.removeEventListener('pointermove', onMove);
@@ -232,18 +367,18 @@ export class BackingTrack implements OnDestroy {
     window.addEventListener('pointerup', onUp);
   }
 
-  onReorderDragStart(event: PointerEvent, slot: number): void {
+  onReorderDragStart(event: PointerEvent, sectionKey: number, slot: number): void {
     event.preventDefault();
     (event.currentTarget as HTMLElement).focus();
     const startX = event.clientX;
     let currentSlot = slot;
-    const startOffset = this.cumulativeBeatsBefore(slot);
+    const startOffset = this.cumulativeBeatsBefore(sectionKey, slot);
     const onMove = (e: PointerEvent) => {
       const deltaBeats = Math.round((e.clientX - startX) / BEAT_WIDTH_PX);
       const targetOffset = Math.max(0, startOffset + deltaBeats);
-      const targetSlot = this.slotAtBeatOffset(targetOffset);
+      const targetSlot = this.slotAtBeatOffset(sectionKey, targetOffset);
       if (targetSlot !== currentSlot) {
-        this.moveSlot(currentSlot, targetSlot);
+        this.moveSlot(sectionKey, currentSlot, targetSlot);
         currentSlot = targetSlot;
       }
     };
@@ -255,14 +390,18 @@ export class BackingTrack implements OnDestroy {
     window.addEventListener('pointerup', onUp);
   }
 
-  private cumulativeBeatsBefore(slot: number): number {
-    return this.timeline()
+  private cumulativeBeatsBefore(sectionKey: number, slot: number): number {
+    const section = this.sectionByKey(sectionKey);
+    if (!section) return 0;
+    return this.timelineFor(section)
       .slice(0, slot)
       .reduce((sum, e) => sum + e.beats, 0);
   }
 
-  private slotAtBeatOffset(offset: number): number {
-    const entries = this.timeline();
+  private slotAtBeatOffset(sectionKey: number, offset: number): number {
+    const section = this.sectionByKey(sectionKey);
+    if (!section) return 0;
+    const entries = this.timelineFor(section);
     let acc = 0;
     for (let i = 0; i < entries.length; i++) {
       acc += entries[i].beats;
@@ -302,12 +441,64 @@ export class BackingTrack implements OnDestroy {
     this.unsubscribeBeat ??= this.tempo.onBeat((event) => this.onBeat(event));
   }
 
+  // Builds the song's playback order: each section repeated per its own
+  // count, in written order. A section with "repeat forever" plays once
+  // through the sections before it, then parks on itself permanently — the
+  // plan stops growing right after it, since nothing past it will ever play.
+  // With no infinite section, the whole plan loops as a unit.
+  private playbackPositionAt(totalBeatIndex: number): { sectionKey: number; localBeat: number } | null {
+    const sections = this.sections();
+    if (!sections.length) return null;
+
+    const steps: { sectionKey: number; length: number }[] = [];
+    let infiniteAt = -1;
+    for (const section of sections) {
+      const length = this.totalBeatsFor(section);
+      if (length <= 0) continue;
+      const state = this.sectionStates().get(section.key);
+      const infinite = state?.infinite ?? false;
+      const count = infinite ? 1 : Math.min(MAX_REPEAT_COUNT, Math.max(1, state?.repeatCount ?? 1));
+      for (let i = 0; i < count; i++) steps.push({ sectionKey: section.key, length });
+      if (infinite) {
+        infiniteAt = steps.length - 1;
+        break;
+      }
+    }
+    if (!steps.length) return null;
+
+    if (infiniteAt === -1) {
+      const totalPlanBeats = steps.reduce((sum, s) => sum + s.length, 0);
+      let pos = totalBeatIndex % totalPlanBeats;
+      for (const step of steps) {
+        if (pos < step.length) return { sectionKey: step.sectionKey, localBeat: pos };
+        pos -= step.length;
+      }
+      return null;
+    }
+
+    const prefix = steps.slice(0, infiniteAt);
+    const prefixBeats = prefix.reduce((sum, s) => sum + s.length, 0);
+    if (totalBeatIndex < prefixBeats) {
+      let pos = totalBeatIndex;
+      for (const step of prefix) {
+        if (pos < step.length) return { sectionKey: step.sectionKey, localBeat: pos };
+        pos -= step.length;
+      }
+    }
+    const infiniteStep = steps[infiniteAt];
+    return { sectionKey: infiniteStep.sectionKey, localBeat: (totalBeatIndex - prefixBeats) % infiniteStep.length };
+  }
+
   private onBeat(event: BeatEvent): void {
     if (!this.enabled() || !this.activeInstrument) return;
-    const entries = this.timeline();
+    const position = this.playbackPositionAt(event.totalBeatIndex);
+    if (!position) return;
+    const section = this.sectionByKey(position.sectionKey);
+    if (!section) return;
+    const entries = this.timelineFor(section);
     if (!entries.length) return;
-    const totalBeats = entries.reduce((sum, e) => sum + e.beats, 0);
-    let pos = event.totalBeatIndex % totalBeats;
+
+    let pos = position.localBeat;
     let slot = entries.length - 1;
     for (let i = 0; i < entries.length; i++) {
       if (pos < entries[i].beats) {
@@ -317,7 +508,7 @@ export class BackingTrack implements OnDestroy {
       pos -= entries[i].beats;
     }
     const isFirstBeatOfSlot = pos === 0;
-    this.scheduleVisualBeat(event.time, slot);
+    this.scheduleVisualBeat(event.time, position.sectionKey, slot);
 
     const entry = entries[slot];
     const beatSeconds = 60 / this.tempo.bpm();
@@ -353,8 +544,7 @@ export class BackingTrack implements OnDestroy {
     const midiNotes = voiceChordMidi(tones, entry.chord.root, ROOT_MIDI);
     const duration = beatSeconds * 0.9;
     const pattern = this.strumPattern();
-    const direction =
-      pattern === 'alternating' ? (totalBeatIndex % 2 === 0 ? 'down' : 'up') : 'down';
+    const direction = pattern === 'alternating' ? (totalBeatIndex % 2 === 0 ? 'down' : 'up') : 'down';
     const ordered = pattern === 'none' ? midiNotes : direction === 'down' ? midiNotes : [...midiNotes].reverse();
     ordered.forEach((note, i) => {
       const stagger = pattern === 'none' ? 0 : i * STRUM_STAGGER_SECONDS;
@@ -362,10 +552,11 @@ export class BackingTrack implements OnDestroy {
     });
   }
 
-  private scheduleVisualBeat(time: number, slot: number): void {
+  private scheduleVisualBeat(time: number, sectionKey: number, slot: number): void {
     const delayMs = Math.max(0, (time - this.tempo.audioContext.currentTime) * 1000);
     const onId = setTimeout(() => {
       this.pulseTimeouts.delete(onId);
+      this.activeSectionKey.set(sectionKey);
       this.activeSlot.set(slot);
       this.beatPulse.set(true);
       const offId = setTimeout(() => {
@@ -380,6 +571,7 @@ export class BackingTrack implements OnDestroy {
   private clearVisualBeat(): void {
     for (const id of this.pulseTimeouts) clearTimeout(id);
     this.pulseTimeouts.clear();
+    this.activeSectionKey.set(null);
     this.activeSlot.set(null);
     this.beatPulse.set(false);
   }

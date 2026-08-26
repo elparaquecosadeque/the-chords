@@ -148,10 +148,87 @@
   }
 }
 
+.backing-track-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.backing-track-section-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+// Fixed column so every row's timeline starts at the same x position
+// regardless of how long each section's (arbitrary, user-typed) name is —
+// right-aligned so short and long names both butt cleanly against the colon.
+.backing-track-section-name {
+  flex: 0 0 88px;
+  overflow: hidden;
+  color: var(--chords-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// One bordered pill split into two segments, matching the
+// .backing-track-instruments segmented-control language, instead of two
+// separate floating boxes.
+.backing-track-repeat {
+  display: flex;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: var(--chords-surface);
+  border: 1px solid var(--chords-border);
+  border-radius: 8px;
+}
+
+.backing-track-repeat-count,
+.backing-track-repeat-infinite {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 30px;
+  padding: 0 6px;
+  color: var(--chords-muted);
+  background: transparent;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    color: var(--chords-primary);
+    background: color-mix(in srgb, var(--chords-primary) 14%, transparent);
+    outline: none;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.backing-track-repeat-count {
+  border-right: 1px solid var(--chords-border);
+}
+
+.backing-track-repeat-infinite[aria-pressed='true'] {
+  color: var(--chords-on-primary);
+  background: var(--chords-primary);
+}
+
 .backing-track-timeline {
   display: flex;
+  flex: 1;
   gap: 3px;
-  max-width: 100%;
+  min-width: 0;
   padding: 3px 3px 8px;
   overflow-x: auto;
   scrollbar-width: thin;

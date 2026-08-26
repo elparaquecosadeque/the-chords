@@ -39,11 +39,11 @@
             type="button"
             role="switch"
             class="backing-track-sync"
-            [attr.aria-checked]="synced()"
+            [attr.aria-checked]="allSynced()"
             [attr.aria-label]="text().backingTrack.sync"
-            (click)="toggleSync()"
+            (click)="toggleGlobalSync()"
           >
-            <span aria-hidden="true">{{ synced() ? '●' : '○' }}</span>
+            <span aria-hidden="true">{{ allSynced() ? '●' : '○' }}</span>
             {{ text().backingTrack.sync }}
           </button>
         }
@@ -85,39 +85,70 @@
   }
 
   @if (hasChords()) {
-    <div class="backing-track-timeline" role="list">
-      @for (entry of timeline(); track entry.index; let slot = $index) {
-        <div
-          class="backing-track-block"
-          role="listitem"
-          [style.--beats]="entry.beats"
-          [class.active]="activeSlot() === slot"
-          [class.pulse]="activeSlot() === slot && beatPulse()"
-        >
-          <button
-            type="button"
-            class="backing-track-handle backing-track-reorder"
-            [attr.aria-label]="text().backingTrack.moveChord + ': ' + entry.chord.raw"
-            (pointerdown)="onReorderDragStart($event, slot)"
-            (keydown.arrowleft)="moveLeft(slot)"
-            (keydown.arrowright)="moveRight(slot)"
-          >
-            <span aria-hidden="true">⠿</span>
-          </button>
-          <span class="backing-track-chord-content">
-            <span class="backing-track-chord-name">{{ entry.chord.raw }}</span>
-            <span class="backing-track-beats">{{ entry.beats }} {{ text().backingTrack.beats }}</span>
-          </span>
-          <button
-            type="button"
-            class="backing-track-handle backing-track-resize"
-            [attr.aria-label]="text().backingTrack.resizeChord + ': ' + entry.chord.raw"
-            (pointerdown)="onResizeDragStart($event, slot)"
-            (keydown.arrowleft)="shrinkBeats(slot)"
-            (keydown.arrowright)="growBeats(slot)"
-          >
-            <span aria-hidden="true">⋮</span>
-          </button>
+    <div class="backing-track-sections">
+      @for (section of sections(); track section.key) {
+        <div class="backing-track-section-row">
+          @if (isSongMode()) {
+            <span class="backing-track-section-name" [title]="section.name">{{ section.name }}:</span>
+          }
+          <div class="backing-track-timeline" role="list">
+            @for (entry of timelineFor(section); track entry.index; let slot = $index) {
+              <div
+                class="backing-track-block"
+                role="listitem"
+                [style.--beats]="entry.beats"
+                [class.active]="activeSectionKey() === section.key && activeSlot() === slot"
+                [class.pulse]="activeSectionKey() === section.key && activeSlot() === slot && beatPulse()"
+              >
+                <button
+                  type="button"
+                  class="backing-track-handle backing-track-reorder"
+                  [attr.aria-label]="text().backingTrack.moveChord + ': ' + entry.chord.raw"
+                  (pointerdown)="onReorderDragStart($event, section.key, slot)"
+                  (keydown.arrowleft)="moveLeft(section.key, slot)"
+                  (keydown.arrowright)="moveRight(section.key, slot)"
+                >
+                  <span aria-hidden="true">⠿</span>
+                </button>
+                <span class="backing-track-chord-content">
+                  <span class="backing-track-chord-name">{{ entry.chord.raw }}</span>
+                  <span class="backing-track-beats">{{ entry.beats }} {{ text().backingTrack.beats }}</span>
+                </span>
+                <button
+                  type="button"
+                  class="backing-track-handle backing-track-resize"
+                  [attr.aria-label]="text().backingTrack.resizeChord + ': ' + entry.chord.raw"
+                  (pointerdown)="onResizeDragStart($event, section.key, slot)"
+                  (keydown.arrowleft)="shrinkBeats(section.key, slot)"
+                  (keydown.arrowright)="growBeats(section.key, slot)"
+                >
+                  <span aria-hidden="true">⋮</span>
+                </button>
+              </div>
+            }
+          </div>
+          @if (isSongMode()) {
+            <div class="backing-track-repeat">
+              <button
+                type="button"
+                class="backing-track-repeat-count"
+                [disabled]="isInfiniteFor(section.key)"
+                [attr.aria-label]="text().backingTrack.repeatCount + ': ' + section.name"
+                (click)="cycleRepeatCount(section.key)"
+              >
+                ×{{ repeatCountFor(section.key) }}
+              </button>
+              <button
+                type="button"
+                class="backing-track-repeat-infinite"
+                [attr.aria-pressed]="isInfiniteFor(section.key)"
+                [attr.aria-label]="text().backingTrack.repeatInfinite + ': ' + section.name"
+                (click)="toggleInfinite(section.key)"
+              >
+                <span aria-hidden="true">∞</span>
+              </button>
+            </div>
+          }
         </div>
       }
     </div>

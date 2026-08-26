@@ -59,6 +59,18 @@ export class TempoService {
     this.beatIndex = 0;
   }
 
+  // Jumps the clock to an arbitrary beat count (e.g. "skip straight to this
+  // song section") without restarting playback. beatIndex/measureIndex are
+  // recomputed from it so the metronome's own beat-1 accent stays consistent
+  // with the new position.
+  seekToBeat(totalBeatIndex: number): void {
+    const clamped = Math.max(0, Math.floor(totalBeatIndex));
+    this.totalBeatIndex = clamped;
+    const perMeasure = this.beatsPerMeasure();
+    this.beatIndex = clamped % perMeasure;
+    this.measureIndex = Math.floor(clamped / perMeasure);
+  }
+
   start(): void {
     const ctx = this.audioContext;
     if (ctx.state === 'suspended') {

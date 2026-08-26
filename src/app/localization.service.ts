@@ -66,6 +66,10 @@ export class LocalizationService {
                     },
                     repeatCount: 'Repeticiones',
                     repeatInfinite: 'Repetir indefinidamente',
+                    moveSection: 'Mover sección',
+                    jumpToSection: 'Saltar a esta sección',
+                    unrecognizedChord: (raw: string, suggestion: string | null) =>
+                        suggestion ? `"${raw}" no reconocido — ¿quisiste decir "${suggestion}"?` : `"${raw}" no reconocido`,
                 },
                 repository: 'Repositorio de The Chords',
                 socialLinks: 'Perfiles sociales',
@@ -131,6 +135,10 @@ export class LocalizationService {
                     },
                     repeatCount: 'Repeat count',
                     repeatInfinite: 'Repeat forever',
+                    moveSection: 'Move section',
+                    jumpToSection: 'Jump to this section',
+                    unrecognizedChord: (raw: string, suggestion: string | null) =>
+                        suggestion ? `"${raw}" not recognized — did you mean "${suggestion}"?` : `"${raw}" not recognized`,
                 },
                 repository: 'The Chords repository',
                 socialLinks: 'Social profiles',

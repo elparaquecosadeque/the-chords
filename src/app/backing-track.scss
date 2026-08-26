@@ -215,13 +215,45 @@
   }
 }
 
-.backing-track-repeat-count {
+.backing-track-repeat-count,
+.backing-track-repeat-infinite {
   border-right: 1px solid var(--chords-border);
 }
 
 .backing-track-repeat-infinite[aria-pressed='true'] {
   color: var(--chords-on-primary);
   background: var(--chords-primary);
+}
+
+.backing-track-jump {
+  display: grid;
+  place-items: center;
+  min-width: 34px;
+  height: 30px;
+  padding: 0 6px;
+  color: var(--chords-muted);
+  background: transparent;
+  border: none;
+  font-size: 0.65rem;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--chords-primary);
+    background: color-mix(in srgb, var(--chords-primary) 14%, transparent);
+    outline: none;
+  }
+}
+
+.backing-track-warnings {
+  margin: 0 0 0 96px; // aligns under the timeline, past the fixed section-name + drag-handle columns
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: var(--chords-danger);
 }
 
 .backing-track-timeline {
@@ -351,7 +383,8 @@
   }
 }
 
-.backing-track-reorder {
+.backing-track-reorder,
+.backing-track-section-reorder {
   cursor: grab;
 
   &:active {

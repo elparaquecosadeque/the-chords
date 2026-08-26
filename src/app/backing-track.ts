@@ -1,5 +1,5 @@
-import { Component, OnDestroy, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { buildChordTones, parseChordName, type ParsedChord } from '@gblp/music-theory';
+import { Component, ElementRef, OnDestroy, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { buildChordTones, parseChordName, suggestChordName, type ParsedChord } from '@gblp/music-theory';
 import { Soundfont, SplendidGrandPiano, type Smplr } from 'smplr';
 
 import { LocalizationService } from './localization.service';
@@ -20,6 +20,10 @@ export interface SongSection {
   key: number;
   name: string | null;
   chords: ParsedChord[];
+  // Tokens that didn't parse as a chord — surfaced in the UI instead of
+  // vanishing silently, matching how Soloin/Chord Finder report a bad token
+  // (with a fuzzy-match suggestion when there's a single confident guess).
+  unparsed: { raw: string; suggestion: string | null }[];
 }
 
 interface SectionState {
@@ -55,20 +59,22 @@ const ROOT_MIDI = 48; // C3 — sits under the melody range, a rhythmic/harmonic
 // an accepted trade-off for keeping per-beat resize simple.
 const BEAT_WIDTH_PX = 32;
 
-function parseChordList(raw: string): ParsedChord[] {
-  return raw
-    .split(',')
-    .map((c) => c.trim())
-    .filter(Boolean)
-    .map((c) => parseChordName(c))
-    .filter((c): c is NonNullable<typeof c> => c !== null);
+function parseChordList(raw: string): { chords: ParsedChord[]; unparsed: SongSection['unparsed'] } {
+  const chords: ParsedChord[] = [];
+  const unparsed: SongSection['unparsed'] = [];
+  for (const token of raw.split(',').map((c) => c.trim()).filter(Boolean)) {
+    const parsed = parseChordName(token);
+    if (parsed) chords.push(parsed);
+    else unparsed.push({ raw: token, suggestion: suggestChordName(token) });
+  }
+  return { chords, unparsed };
 }
 
 // "Verse: Am, G, C, F; Chorus: F, G, C, C;" — split on ';', each segment
-// "Name: chords" split on the first ':'. Segments with no colon, an empty
-// name, or no parseable chords are skipped rather than surfaced as errors —
-// consistent with how a single unparseable chord is silently dropped
-// elsewhere in this component.
+// "Name: chords" split on the first ':'. A segment with no colon, an empty
+// name, or zero parseable chords is skipped entirely (nothing to show a row
+// for); a segment with at least one valid chord keeps its bad tokens in
+// `unparsed` for the template to surface.
 function parseSongStructure(raw: string): SongSection[] {
   return raw
     .split(';')
@@ -79,9 +85,9 @@ function parseSongStructure(raw: string): SongSection[] {
       if (colonIndex === -1) return null;
       const name = segment.slice(0, colonIndex).trim();
       if (!name) return null;
-      const chords = parseChordList(segment.slice(colonIndex + 1));
+      const { chords, unparsed } = parseChordList(segment.slice(colonIndex + 1));
       if (!chords.length) return null;
-      return { key: i, name, chords };
+      return { key: i, name, chords, unparsed };
     })
     .filter((s): s is SongSection => s !== null);
 }
@@ -95,6 +101,7 @@ function parseSongStructure(raw: string): SongSection[] {
 export class BackingTrack implements OnDestroy {
   private readonly localization = inject(LocalizationService);
   private readonly tempo = inject(TempoService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
   readonly text = this.localization.languageDictionary;
 
   readonly progression = input('');
@@ -121,8 +128,8 @@ export class BackingTrack implements OnDestroy {
   readonly sections = computed<SongSection[]>(() => {
     const raw = this.progression();
     if (raw.includes(':')) return parseSongStructure(raw);
-    const chords = parseChordList(raw);
-    return chords.length ? [{ key: 0, name: null, chords }] : [];
+    const { chords, unparsed } = parseChordList(raw);
+    return chords.length ? [{ key: 0, name: null, chords, unparsed }] : [];
   });
 
   readonly hasChords = computed(() => this.sections().length > 0);
@@ -136,6 +143,21 @@ export class BackingTrack implements OnDestroy {
   readonly allSynced = computed(() => {
     const states = this.sectionStates();
     return this.sections().every((s) => states.get(s.key)?.synced ?? true);
+  });
+
+  // Playback/display order for whole sections — independent of chord editing
+  // within a section. Defaults to written order; dragging a section's handle
+  // (song mode only) reorders it here without touching the typed text.
+  private readonly sectionOrder = signal<number[]>([]);
+
+  readonly orderedSections = computed<SongSection[]>(() => {
+    const sections = this.sections();
+    const byKey = new Map(sections.map((s) => [s.key, s]));
+    const ordered = this.sectionOrder()
+      .filter((k) => byKey.has(k))
+      .map((k) => byKey.get(k)!);
+    const missing = sections.filter((s) => !this.sectionOrder().includes(s.key));
+    return [...ordered, ...missing];
   });
 
   // Highlights whichever section+slot is currently sounding, pulsing once per
@@ -173,6 +195,11 @@ export class BackingTrack implements OnDestroy {
         for (const key of next.keys()) {
           if (!validKeys.has(key)) next.delete(key);
         }
+
+        const keptOrder = this.sectionOrder().filter((k) => validKeys.has(k));
+        const newKeys = sections.map((s) => s.key).filter((k) => !keptOrder.includes(k));
+        this.sectionOrder.set([...keptOrder, ...newKeys]);
+
         for (const section of sections) {
           const chords = section.chords;
           const existing = next.get(section.key);
@@ -339,6 +366,54 @@ export class BackingTrack implements OnDestroy {
     this.updateSectionState(sectionKey, (s) => ({ ...s, order: nextOrder, synced: false }));
   }
 
+  moveSectionUp(sectionKey: number): void {
+    const order = this.sectionOrder();
+    const idx = order.indexOf(sectionKey);
+    this.moveSection(idx, idx - 1);
+  }
+
+  moveSectionDown(sectionKey: number): void {
+    const order = this.sectionOrder();
+    const idx = order.indexOf(sectionKey);
+    this.moveSection(idx, idx + 1);
+  }
+
+  private moveSection(from: number, to: number): void {
+    const current = this.sectionOrder();
+    if (from < 0 || to < 0 || to >= current.length || from === to) return;
+    const next = [...current];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    this.sectionOrder.set(next);
+  }
+
+  // Vertical drag: which row the pointer is over is read straight from the
+  // DOM (row heights vary with chord count/wrapping, unlike the fixed-width
+  // beat math used for horizontal chord dragging above).
+  onSectionReorderDragStart(event: PointerEvent, sectionKey: number): void {
+    event.preventDefault();
+    (event.currentTarget as HTMLElement).focus();
+    const host: HTMLElement = this.elementRef.nativeElement;
+    const rows: HTMLElement[] = Array.from(host.querySelectorAll('.backing-track-section-row'));
+    let currentIndex = this.sectionOrder().indexOf(sectionKey);
+    const onMove = (e: PointerEvent) => {
+      const targetIndex = rows.findIndex((row) => {
+        const rect = row.getBoundingClientRect();
+        return e.clientY >= rect.top && e.clientY <= rect.bottom;
+      });
+      if (targetIndex !== -1 && targetIndex !== currentIndex) {
+        this.moveSection(currentIndex, targetIndex);
+        currentIndex = targetIndex;
+      }
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
   private updateSectionState(key: number, updater: (s: SectionState) => SectionState): void {
     this.sectionStates.update((map) => {
       const existing = map.get(key);
@@ -441,32 +516,35 @@ export class BackingTrack implements OnDestroy {
     this.unsubscribeBeat ??= this.tempo.onBeat((event) => this.onBeat(event));
   }
 
-  // Builds the song's playback order: each section repeated per its own
-  // count, in written order. A section with "repeat forever" plays once
-  // through the sections before it, then parks on itself permanently — the
-  // plan stops growing right after it, since nothing past it will ever play.
-  // With no infinite section, the whole plan loops as a unit.
-  private playbackPositionAt(totalBeatIndex: number): { sectionKey: number; localBeat: number } | null {
-    const sections = this.sections();
-    if (!sections.length) return null;
-
+  // Builds the song's playback plan: each section repeated per its own
+  // count, in display order (write order, unless the user dragged a section
+  // to reorder it). A section with "repeat forever" plays once through the
+  // sections before it, then parks on itself permanently — the plan stops
+  // growing right after it, since nothing past it will ever play. With no
+  // infinite section, the whole plan loops as a unit.
+  private buildPlan(): { sectionKey: number; length: number }[] {
     const steps: { sectionKey: number; length: number }[] = [];
-    let infiniteAt = -1;
-    for (const section of sections) {
+    for (const section of this.orderedSections()) {
       const length = this.totalBeatsFor(section);
       if (length <= 0) continue;
       const state = this.sectionStates().get(section.key);
       const infinite = state?.infinite ?? false;
       const count = infinite ? 1 : Math.min(MAX_REPEAT_COUNT, Math.max(1, state?.repeatCount ?? 1));
       for (let i = 0; i < count; i++) steps.push({ sectionKey: section.key, length });
-      if (infinite) {
-        infiniteAt = steps.length - 1;
-        break;
-      }
+      if (infinite) break;
     }
+    return steps;
+  }
+
+  private playbackPositionAt(totalBeatIndex: number): { sectionKey: number; localBeat: number } | null {
+    const steps = this.buildPlan();
     if (!steps.length) return null;
 
-    if (infiniteAt === -1) {
+    const state = this.sectionStates();
+    const lastStep = steps[steps.length - 1];
+    const isInfinite = state.get(lastStep.sectionKey)?.infinite ?? false;
+
+    if (!isInfinite) {
       const totalPlanBeats = steps.reduce((sum, s) => sum + s.length, 0);
       let pos = totalBeatIndex % totalPlanBeats;
       for (const step of steps) {
@@ -476,7 +554,7 @@ export class BackingTrack implements OnDestroy {
       return null;
     }
 
-    const prefix = steps.slice(0, infiniteAt);
+    const prefix = steps.slice(0, -1);
     const prefixBeats = prefix.reduce((sum, s) => sum + s.length, 0);
     if (totalBeatIndex < prefixBeats) {
       let pos = totalBeatIndex;
@@ -485,8 +563,24 @@ export class BackingTrack implements OnDestroy {
         pos -= step.length;
       }
     }
-    const infiniteStep = steps[infiniteAt];
-    return { sectionKey: infiniteStep.sectionKey, localBeat: (totalBeatIndex - prefixBeats) % infiniteStep.length };
+    return { sectionKey: lastStep.sectionKey, localBeat: (totalBeatIndex - prefixBeats) % lastStep.length };
+  }
+
+  // Seeks the shared transport straight to the start of this section's first
+  // occurrence in the plan, starting playback if it wasn't already running —
+  // lets you audition a section without waiting for it to come around.
+  jumpToSection(sectionKey: number): void {
+    if (!this.tempo.isPlaying()) {
+      this.tempo.start();
+    }
+    let offset = 0;
+    for (const step of this.buildPlan()) {
+      if (step.sectionKey === sectionKey) {
+        this.tempo.seekToBeat(offset);
+        return;
+      }
+      offset += step.length;
+    }
   }
 
   private onBeat(event: BeatEvent): void {

@@ -86,9 +86,19 @@
 
   @if (hasChords()) {
     <div class="backing-track-sections">
-      @for (section of sections(); track section.key) {
+      @for (section of orderedSections(); track section.key) {
         <div class="backing-track-section-row">
           @if (isSongMode()) {
+            <button
+              type="button"
+              class="backing-track-handle backing-track-section-reorder"
+              [attr.aria-label]="text().backingTrack.moveSection + ': ' + section.name"
+              (pointerdown)="onSectionReorderDragStart($event, section.key)"
+              (keydown.arrowup)="moveSectionUp(section.key)"
+              (keydown.arrowdown)="moveSectionDown(section.key)"
+            >
+              <span aria-hidden="true">⠿</span>
+            </button>
             <span class="backing-track-section-name" [title]="section.name">{{ section.name }}:</span>
           }
           <div class="backing-track-timeline" role="list">
@@ -147,9 +157,24 @@
               >
                 <span aria-hidden="true">∞</span>
               </button>
+              <button
+                type="button"
+                class="backing-track-jump"
+                [attr.aria-label]="text().backingTrack.jumpToSection + ': ' + section.name"
+                (click)="jumpToSection(section.key)"
+              >
+                <span aria-hidden="true">▶</span>
+              </button>
             </div>
           }
         </div>
+        @if (section.unparsed.length > 0) {
+          <ul class="backing-track-warnings">
+            @for (item of section.unparsed; track item.raw) {
+              <li>{{ text().backingTrack.unrecognizedChord(item.raw, item.suggestion) }}</li>
+            }
+          </ul>
+        }
       }
     </div>
   }

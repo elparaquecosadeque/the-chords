@@ -1,0 +1,123 @@
+.info-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--chords-background) 70%, transparent);
+  backdrop-filter: blur(6px);
+  animation: info-backdrop-in 180ms ease-out;
+}
+
+.info-panel {
+  width: min(560px, 100%);
+  max-height: min(640px, 100dvh - 48px);
+  overflow-y: auto;
+  color: var(--chords-text);
+  background: var(--chords-surface-elevated);
+  border: 1px solid var(--chords-border);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px -12px color-mix(in srgb, var(--chords-text) 24%, transparent);
+  animation: info-panel-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.info-panel-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 16px;
+  background: var(--chords-surface-elevated);
+  border-bottom: 1px solid var(--chords-border);
+}
+
+.info-panel-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.info-close {
+  display: grid;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--chords-muted);
+  background: transparent;
+  border: 1px solid var(--chords-border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.info-close:hover,
+.info-close:focus-visible {
+  color: var(--chords-text);
+  border-color: var(--chords-primary);
+  outline: none;
+}
+
+.info-panel-body {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.info-section {
+  padding-block: 16px;
+  border-top: 1px solid var(--chords-border);
+}
+
+.info-section:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.info-section h3 {
+  margin: 0 0 8px;
+  color: var(--chords-primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.info-section p {
+  max-width: 68ch;
+  margin: 0;
+  color: var(--chords-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+@keyframes info-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes info-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .info-backdrop,
+  .info-panel {
+    animation: none;
+  }
+}

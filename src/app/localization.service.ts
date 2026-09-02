@@ -29,6 +29,22 @@ export class LocalizationService {
                     circlePreviewToggle: 'Círculo en vivo',
                     enharmonicNote: 'Las tonalidades se muestran con su deletreo estándar (p. ej. Db), que puede no coincidir con los sostenidos/bemoles que escribiste.',
                 },
+                infoModal: {
+                    buttonLabel: 'Qué es esto',
+                    close: 'Cerrar',
+                    chordFinder:
+                        'Un acorde es un grupo de notas que suenan juntas. Aquí buscas el nombre de un acorde (por ejemplo Cmaj7 o G7) y ves sus digitaciones posibles en el diapasón: qué trastes y cuerdas tocar. Las tríadas (3 notas: fundamental, tercera y quinta) son la base; acordes extendidos como el 7, 9 u 11 añaden color agregando notas por encima de esa tríada.',
+                    circleOfFifths:
+                        'El círculo de quintas ordena las 12 tonalidades según su cercanía armónica: cada paso hacia la derecha sube una quinta justa y suma un sostenido a la armadura de clave. Al elegir una tonalidad ves sus 7 acordes diatónicos (I, ii, iii, IV, V, vi, vii°), los que se construyen naturalmente sobre cada grado de la escala y que suelen combinarse bien entre sí.',
+                    bassNotes:
+                        'La línea de bajo normalmente parte de la fundamental de cada acorde de tu progresión, marcando el pulso armónico. Desde ahí puedes acercarte a la siguiente fundamental con notas de paso o del propio acorde, dando movimiento sin perder el centro tonal de cada compás.',
+                    soloin:
+                        'Para improvisar un solo sobre una progresión, primero identificas su tonalidad y luego eliges una escala o modo que combine con esos acordes: la escala mayor o menor de la tonalidad, un modo relacionado, o una pentatónica si buscas algo más simple y directo.',
+                    backingTrack:
+                        'Una pista de acompañamiento reproduce los acordes de tu progresión como si los tocara un instrumento de fondo (comping), dándote un contexto armónico real para ensayar tu solo o tu línea de bajo encima.',
+                    compose:
+                        'Componer une las otras 4 herramientas en una sola página, en el orden en que normalmente armarías una canción: escribes tu progresión rítmica, exploras su teoría y tonalidad, encuentras un solo y construyes el bajo, todo sobre la misma progresión, sin ir y venir entre pestañas.',
+                },
                 homeLabel: 'Inicio de The Chords',
                 darkTheme: 'Tema oscuro',
                 lightTheme: 'Tema claro',
@@ -97,6 +113,22 @@ export class LocalizationService {
                     },
                     circlePreviewToggle: 'Live circle',
                     enharmonicNote: 'Keys are shown in their standard spelling (e.g. Db), which may not match the sharps/flats you typed.',
+                },
+                infoModal: {
+                    buttonLabel: "What's this",
+                    close: 'Close',
+                    chordFinder:
+                        'A chord is a group of notes played together. Here you search for a chord name (like Cmaj7 or G7) and see its possible fretboard fingerings — which frets and strings to play. Triads (3 notes: root, third and fifth) are the foundation; extended chords like 7ths, 9ths or 11ths add color by stacking more notes on top of that triad.',
+                    circleOfFifths:
+                        'The circle of fifths arranges all 12 keys by harmonic closeness: each step clockwise rises a perfect fifth and adds one sharp to the key signature. Picking a key shows its 7 diatonic chords (I, ii, iii, IV, V, vi, vii°) — the chords built naturally on each scale degree, which tend to sound good together.',
+                    bassNotes:
+                        "A bassline usually starts from each chord's root in your progression, laying down the harmonic pulse. From there you can approach the next root with passing or chord tones, adding movement while keeping each bar anchored to its key.",
+                    soloin:
+                        "To solo over a progression, you first work out its key, then pick a scale or mode that fits those chords: the key's major or minor scale, a related mode, or a pentatonic if you want something simpler and more direct.",
+                    backingTrack:
+                        "A backing track plays your progression's chords like a background instrument would (comping), giving you a real harmonic bed to practice a solo or bassline against.",
+                    compose:
+                        "Compose brings the other 4 tools together on one page, in the order you'd normally build a song: write your rhythm progression, explore its theory and key, find a solo, and build a bassline, all on the same progression, without flipping between tabs.",
                 },
                 homeLabel: 'The Chords home',
                 darkTheme: 'Dark theme',

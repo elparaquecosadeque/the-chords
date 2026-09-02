@@ -119,6 +119,7 @@
 
 .preferences {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -138,6 +139,18 @@
 .preferences button:focus-visible {
   border-color: var(--chords-primary);
   outline: none;
+}
+
+.info-trigger {
+  display: grid;
+  width: 34px;
+  padding: 0;
+  place-items: center;
+}
+
+.info-trigger svg {
+  width: 17px;
+  height: 17px;
 }
 
 .tool-content {

@@ -9,7 +9,7 @@ import { BackingTrack } from './backing-track';
 import { LocalizationService } from './localization.service';
 import { PreferencesService } from './preferences.service';
 
-type ComposeTab = 'rhythm' | 'theory' | 'solo' | 'bass';
+export type ComposeTab = 'rhythm' | 'theory' | 'solo' | 'bass';
 
 const TABS: ComposeTab[] = ['rhythm', 'theory', 'solo', 'bass'];
 

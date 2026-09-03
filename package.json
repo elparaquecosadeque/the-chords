@@ -20,7 +20,7 @@
     "@angular/router": "^22.0.0",
     "@fortawesome/fontawesome-free": "^7.3.0",
     "@gblp/bass-notes": "^0.2.3",
-    "@gblp/chord-finder": "^0.4.1",
+    "@gblp/chord-finder": "^0.5.0",
     "@gblp/circle-of-fifths": "^0.4.4",
     "@gblp/soloin": "^0.3.2",
     "driver.js": "^1.8.0",

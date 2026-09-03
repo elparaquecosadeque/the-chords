@@ -102,6 +102,25 @@
   line-height: 1.6;
 }
 
+.info-tour-btn {
+  padding: 8px 14px;
+  margin-top: 12px;
+  color: var(--chords-on-primary);
+  background: var(--chords-primary);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 750;
+  transition: filter 150ms ease;
+}
+
+.info-tour-btn:hover,
+.info-tour-btn:focus-visible {
+  filter: brightness(1.1);
+  outline: none;
+}
+
 @keyframes info-backdrop-in {
   from {
     opacity: 0;

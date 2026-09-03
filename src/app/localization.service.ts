@@ -32,6 +32,7 @@ export class LocalizationService {
                 infoModal: {
                     buttonLabel: 'Qué es esto',
                     close: 'Cerrar',
+                    startTour: 'Ver recorrido guiado',
                     chordFinder:
                         'Un acorde es un grupo de notas que suenan juntas. Aquí buscas el nombre de un acorde (por ejemplo Cmaj7 o G7) y ves sus digitaciones posibles en el diapasón: qué trastes y cuerdas tocar. Las tríadas (3 notas: fundamental, tercera y quinta) son la base; acordes extendidos como el 7, 9 u 11 añaden color agregando notas por encima de esa tríada.',
                     circleOfFifths:
@@ -117,6 +118,7 @@ export class LocalizationService {
                 infoModal: {
                     buttonLabel: "What's this",
                     close: 'Close',
+                    startTour: 'Start walkthrough',
                     chordFinder:
                         'A chord is a group of notes played together. Here you search for a chord name (like Cmaj7 or G7) and see its possible fretboard fingerings — which frets and strings to play. Triads (3 notes: root, third and fifth) are the foundation; extended chords like 7ths, 9ths or 11ths add color by stacking more notes on top of that triad.',
                     circleOfFifths:

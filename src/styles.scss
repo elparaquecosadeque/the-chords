@@ -1,5 +1,79 @@
 @import '@fortawesome/fontawesome-free/css/fontawesome.css';
 @import '@fortawesome/fontawesome-free/css/brands.css';
+@import 'driver.js/dist/driver.css';
+
+// driver.js appends its overlay/popover as a sibling of <app-root>, outside
+// .shell's subtree, so it can't see the --chords-* tokens defined there —
+// mirrored here on :root (kept in sync with .shell's [data-theme] on <html>,
+// see app.ts) so the walkthrough popover matches the active theme.
+:root {
+  --chords-surface-elevated: rgba(0, 0, 0, 0.92);
+  --chords-text: #f8f8ff;
+  --chords-muted: #dedbff;
+  --chords-primary: #00fff0;
+  --chords-border: rgba(0, 255, 240, 0.76);
+  --chords-on-primary: #000000;
+}
+
+:root[data-theme='light'] {
+  --chords-surface-elevated: #f8fafc;
+  --chords-text: #1e293b;
+  --chords-muted: #64748b;
+  --chords-primary: #3b82f6;
+  --chords-border: #e2e8f0;
+  --chords-on-primary: #ffffff;
+}
+
+.driver-popover {
+  color: var(--chords-text);
+  background: var(--chords-surface-elevated);
+  border: 1px solid var(--chords-border);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.45);
+}
+
+.driver-popover-title {
+  color: var(--chords-primary);
+  font-weight: 800;
+}
+
+.driver-popover-description {
+  color: var(--chords-muted);
+}
+
+.driver-popover-progress-text {
+  color: var(--chords-muted);
+}
+
+.driver-popover-footer button {
+  color: var(--chords-on-primary);
+  background: var(--chords-primary);
+  border: none;
+  text-shadow: none;
+}
+
+.driver-popover-footer .driver-popover-prev-btn {
+  color: var(--chords-text);
+  background: transparent;
+  border: 1px solid var(--chords-border);
+}
+
+.driver-popover-close-btn {
+  color: var(--chords-muted);
+}
+
+.driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: var(--chords-surface-elevated);
+}
+.driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: var(--chords-surface-elevated);
+}
+.driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: var(--chords-surface-elevated);
+}
+.driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: var(--chords-surface-elevated);
+}
 
 * {
   box-sizing: border-box;

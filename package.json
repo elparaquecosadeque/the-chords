@@ -23,6 +23,7 @@
     "@gblp/chord-finder": "^0.4.1",
     "@gblp/circle-of-fifths": "^0.4.1",
     "@gblp/soloin": "^0.3.2",
+    "driver.js": "^1.8.0",
     "rxjs": "~7.8.0",
     "smplr": "^1.0.0",
     "tslib": "^2.3.0"

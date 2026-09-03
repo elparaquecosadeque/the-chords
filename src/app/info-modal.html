@@ -14,6 +14,11 @@
           <section class="info-section">
             <h3>{{ section.title }}</h3>
             <p>{{ section.body }}</p>
+            @if (section.tourKey; as tourKey) {
+              <button type="button" class="info-tour-btn" (click)="startWalkthrough(tourKey)">
+                {{ text().infoModal.startTour }} →
+              </button>
+            }
           </section>
         }
       </div>

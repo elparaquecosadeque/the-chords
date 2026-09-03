@@ -2,11 +2,16 @@ import { Component, computed, effect, ElementRef, HostListener, inject, input, o
 
 import type { ComposeTab } from './compose-page';
 import { LocalizationService } from './localization.service';
+import { PreferencesService } from './preferences.service';
+import { startTour, type TourKey } from './tour';
 
 interface InfoSection {
   title: string;
   body: string;
+  tourKey?: TourKey;
 }
+
+const TOUR_KEYS = new Set<string>(['chord-finder', 'circle-of-fifths', 'bass-notes', 'soloin']);
 
 const COMPOSE_TAB_TO_ROUTE_KEY: Record<ComposeTab, string> = {
   rhythm: 'chord-finder',
@@ -23,6 +28,7 @@ const COMPOSE_TAB_TO_ROUTE_KEY: Record<ComposeTab, string> = {
 })
 export class InfoModal {
   private readonly localization = inject(LocalizationService);
+  private readonly preferences = inject(PreferencesService);
   private readonly elementRef = inject(ElementRef<HTMLElement>);
   private readonly closeButton = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
   readonly text = this.localization.languageDictionary;
@@ -47,7 +53,8 @@ export class InfoModal {
     }
 
     const section = this.sectionFor(routeKey);
-    return section ? [section] : [];
+    if (!section) return [];
+    return TOUR_KEYS.has(routeKey) ? [{ ...section, tourKey: routeKey as TourKey }] : [section];
   });
 
   constructor() {
@@ -75,6 +82,14 @@ export class InfoModal {
 
   close(): void {
     this.closed.emit();
+  }
+
+  startWalkthrough(tourKey: TourKey): void {
+    const language = this.preferences.language();
+    this.close();
+    // Wait a tick so the backdrop (which blurs the real page) is torn down
+    // before driver.js spotlights an element underneath it.
+    setTimeout(() => startTour(tourKey, language));
   }
 
   @HostListener('document:keydown.escape')

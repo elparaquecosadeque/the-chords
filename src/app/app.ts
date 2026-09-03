@@ -46,6 +46,10 @@ export class App {
 
   constructor() {
     effect(() => (this.document.documentElement.lang = this.preferences.language()));
+    // Mirrors .shell's [data-theme] onto <html> so global (non-component-scoped)
+    // CSS — like the driver.js walkthrough theming in styles.scss — can react to
+    // the theme too, since driver.js appends its popover as a sibling of <app-root>.
+    effect(() => (this.document.documentElement.dataset['theme'] = this.preferences.theme()));
   }
 
   onRouteActivate(component: unknown): void {

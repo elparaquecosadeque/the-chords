@@ -3,7 +3,13 @@ import { buildChordTones, parseChordName, suggestChordName, type ParsedChord } f
 import { Soundfont, SplendidGrandPiano, type Smplr } from 'smplr';
 
 import { LocalizationService } from './localization.service';
+import type { SavedSessionSectionState } from './session-codec';
 import { TempoService, type BeatEvent } from './tempo.service';
+
+export interface BackingTrackInitialState {
+  sectionOrder?: number[];
+  sections?: Record<number, SavedSessionSectionState>;
+}
 
 export interface TimelineSlot {
   index: number;
@@ -105,6 +111,11 @@ export class BackingTrack implements OnDestroy {
   readonly text = this.localization.languageDictionary;
 
   readonly progression = input('');
+  // A one-shot restore payload (e.g. from a loaded/shared session) — applied
+  // once to the first sections derived after it's set, then ignored, so a
+  // manual edit afterward doesn't keep re-imposing old saved beats/order.
+  readonly initialState = input<BackingTrackInitialState | null>(null);
+  private appliedInitialState: BackingTrackInitialState | null = null;
 
   readonly isPlaying = this.tempo.isPlaying;
   readonly enabled = signal(false);
@@ -196,6 +207,11 @@ export class BackingTrack implements OnDestroy {
           if (!validKeys.has(key)) next.delete(key);
         }
 
+        // A new object reference means a new restore request (a fresh session
+        // load); the same reference means we've already consumed it.
+        const requested = this.initialState();
+        const pending = requested && requested !== this.appliedInitialState ? requested : null;
+
         const keptOrder = this.sectionOrder().filter((k) => validKeys.has(k));
         const newKeys = sections.map((s) => s.key).filter((k) => !keptOrder.includes(k));
         this.sectionOrder.set([...keptOrder, ...newKeys]);
@@ -204,12 +220,13 @@ export class BackingTrack implements OnDestroy {
           const chords = section.chords;
           const existing = next.get(section.key);
           if (!existing) {
+            const override = pending?.sections?.[section.key];
             next.set(section.key, {
-              order: chords.map((_, i) => i),
-              beats: {},
-              synced: true,
-              repeatCount: 1,
-              infinite: false,
+              order: override?.order ?? chords.map((_, i) => i),
+              beats: override?.beats ?? {},
+              synced: !override,
+              repeatCount: override?.repeat ?? 1,
+              infinite: override?.infinite ?? false,
             });
             continue;
           }
@@ -226,9 +243,58 @@ export class BackingTrack implements OnDestroy {
           }
           next.set(section.key, { ...existing, order: [...kept, ...added], beats });
         }
+
+        // Only mark the restore consumed once there were real sections to
+        // apply it to — an empty first pass (progression not seeded in yet)
+        // must not burn the one-shot flag before it had anything to do.
+        if (pending && sections.length > 0) {
+          this.appliedInitialState = pending;
+          if (pending.sectionOrder) {
+            const valid = pending.sectionOrder.filter((k) => validKeys.has(k));
+            const missing = [...validKeys].filter((k) => !valid.includes(k));
+            this.sectionOrder.set([...valid, ...missing]);
+          }
+        }
+
         this.sectionStates.set(next);
       });
     });
+  }
+
+  // Mirrors exportState()'s "omit defaults" rules for whichever fields it emits.
+  private static arraysMatch(a: number[], b: number[]): boolean {
+    return a.length === b.length && a.every((value, i) => value === b[i]);
+  }
+
+  // Captures the current rich per-section state (custom slot lengths, repeat/
+  // infinite, drag-reordered slots and sections) — omitting anything still at
+  // its default so a plain, un-edited backing track exports as `{}`.
+  exportState(): BackingTrackInitialState {
+    const sections = this.sections();
+    const states = this.sectionStates();
+    const order = this.sectionOrder();
+    const identityOrder = sections.map((s) => s.key);
+
+    const result: BackingTrackInitialState = {};
+    if (order.length && !BackingTrack.arraysMatch(order, identityOrder)) {
+      result.sectionOrder = order;
+    }
+
+    const sectionsOut: Record<number, SavedSessionSectionState> = {};
+    for (const section of sections) {
+      const state = states.get(section.key);
+      if (!state) continue;
+      const identity = section.chords.map((_, i) => i);
+      const entry: SavedSessionSectionState = {};
+      if (!BackingTrack.arraysMatch(state.order, identity)) entry.order = state.order;
+      if (Object.keys(state.beats).length) entry.beats = state.beats;
+      if (state.repeatCount !== 1) entry.repeat = state.repeatCount;
+      if (state.infinite) entry.infinite = true;
+      if (Object.keys(entry).length) sectionsOut[section.key] = entry;
+    }
+    if (Object.keys(sectionsOut).length) result.sections = sectionsOut;
+
+    return result;
   }
 
   private sectionByKey(key: number): SongSection | undefined {

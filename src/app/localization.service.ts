@@ -88,6 +88,16 @@ export class LocalizationService {
                     unrecognizedChord: (raw: string, suggestion: string | null) =>
                         suggestion ? `"${raw}" no reconocido — ¿quisiste decir "${suggestion}"?` : `"${raw}" no reconocido`,
                 },
+                sessions: {
+                    triggerLabel: 'Sesiones guardadas',
+                    saveButton: 'Guardar sesión',
+                    namePlaceholder: 'Nombre de la sesión (opcional)',
+                    confirmSave: 'Guardar',
+                    panelTitle: 'Sesiones guardadas',
+                    close: 'Cerrar',
+                    empty: 'Aún no has guardado ninguna sesión. Usa "Guardar sesión" en Componer.',
+                    remove: 'Eliminar sesión',
+                },
                 repository: 'Repositorio de The Chords',
                 socialLinks: 'Perfiles sociales',
                 githubProfile: 'Perfil de GitHub de Bruno Leon',
@@ -173,6 +183,16 @@ export class LocalizationService {
                     jumpToSection: 'Jump to this section',
                     unrecognizedChord: (raw: string, suggestion: string | null) =>
                         suggestion ? `"${raw}" not recognized — did you mean "${suggestion}"?` : `"${raw}" not recognized`,
+                },
+                sessions: {
+                    triggerLabel: 'Saved sessions',
+                    saveButton: 'Save session',
+                    namePlaceholder: 'Session name (optional)',
+                    confirmSave: 'Save',
+                    panelTitle: 'Saved sessions',
+                    close: 'Close',
+                    empty: "You haven't saved any sessions yet. Use \"Save session\" on Compose.",
+                    remove: 'Remove session',
                 },
                 repository: 'The Chords repository',
                 socialLinks: 'Social profiles',

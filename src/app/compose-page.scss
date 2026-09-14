@@ -79,6 +79,78 @@
   background: var(--chords-surface);
 }
 
+.save-session-row {
+  display: flex;
+}
+
+.save-session-trigger-wrap {
+  position: relative;
+}
+
+.save-session-btn {
+  padding: 8px 16px;
+  color: var(--chords-text);
+  background: var(--chords-surface);
+  border: 1px solid var(--chords-border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--chords-primary);
+    outline: none;
+  }
+}
+
+.save-session-popover {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  background: var(--chords-surface);
+  border: 1px solid var(--chords-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--chords-text) 20%, transparent);
+}
+
+.save-session-input {
+  width: 200px;
+  padding: 8px 10px;
+  color: var(--chords-text);
+  background: var(--chords-background-alt);
+  border: 1px solid var(--chords-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+
+  &:focus-visible {
+    border-color: var(--chords-primary);
+    outline: none;
+  }
+}
+
+.save-session-confirm {
+  padding: 8px 14px;
+  color: var(--chords-on-primary);
+  background: var(--chords-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus-visible {
+    filter: brightness(1.1);
+    outline: none;
+  }
+}
+
 .rhythm-layout {
   display: flex;
   flex-direction: column;

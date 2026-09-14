@@ -21,7 +21,31 @@
 
   <p class="compose-step-description">{{ localization.languageDictionary().composePage.descriptions[activeTab()] }}</p>
 
-  <app-backing-track [progression]="rhythmProgression()" />
+  <div class="save-session-row">
+    <div class="save-session-trigger-wrap" #saveSessionWrap>
+      <button type="button" class="save-session-btn" (click)="toggleSaveNamePopover()">
+        {{ localization.languageDictionary().sessions.saveButton }}
+      </button>
+      @if (saveNameOpen()) {
+        <div class="save-session-popover" role="group" [attr.aria-label]="localization.languageDictionary().sessions.saveButton">
+          <input
+            type="text"
+            class="save-session-input"
+            [ngModel]="saveNameValue()"
+            (ngModelChange)="saveNameValue.set($event)"
+            [placeholder]="localization.languageDictionary().sessions.namePlaceholder"
+            (keydown.enter)="confirmSaveSession()"
+            (keydown.escape)="toggleSaveNamePopover()"
+          />
+          <button type="button" class="save-session-confirm" (click)="confirmSaveSession()">
+            {{ localization.languageDictionary().sessions.confirmSave }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <app-backing-track [progression]="rhythmProgression()" [initialState]="backingTrackInitialState()" />
 
   <div class="compose-panel" [hidden]="activeTab() !== 'rhythm'">
     <div class="rhythm-layout">

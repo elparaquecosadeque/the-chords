@@ -9,10 +9,11 @@ import { InfoModal } from './info-modal';
 import { LocalizationService } from './localization.service';
 import { Metronome } from './metronome';
 import { PreferencesService } from './preferences.service';
+import { SessionsPanel } from './sessions-panel';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, UpperCasePipe, Metronome, InfoModal],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, UpperCasePipe, Metronome, InfoModal, SessionsPanel],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -43,6 +44,7 @@ export class App {
   );
 
   readonly infoOpen = signal(false);
+  readonly sessionsOpen = signal(false);
 
   constructor() {
     effect(() => (this.document.documentElement.lang = this.preferences.language()));

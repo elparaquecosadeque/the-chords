@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, computed, effect, inject, signal } from '@angular/core';
 
 import { LocalizationService } from './localization.service';
 import { TempoService } from './tempo.service';
@@ -48,6 +48,18 @@ export class Metronome implements OnDestroy {
     this.unsubscribeBeat = this.tempo.onBeat((event) => {
       this.playClick(event.time, event.isAccent);
       this.scheduleVisualPulse(event.time, event.isAccent);
+    });
+
+    // Keeps the displayed BPM in sync when something outside this component
+    // changes it (e.g. loading a saved session) — but never while the user is
+    // actively typing in the field, or this would fight their keystrokes.
+    effect(() => {
+      const bpm = this.bpm();
+      const host: HTMLElement = this.elementRef.nativeElement;
+      const bpmField = host.querySelector<HTMLInputElement>('.metronome-bpm');
+      if (document.activeElement !== bpmField) {
+        this.bpmInputValue.set(String(bpm));
+      }
     });
   }
 

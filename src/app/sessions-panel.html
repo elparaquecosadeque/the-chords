@@ -1,0 +1,38 @@
+@if (open()) {
+  <div class="sessions-backdrop" (click)="onBackdropClick($event)">
+    <div class="sessions-panel" role="dialog" aria-modal="true" aria-labelledby="sessions-panel-title">
+      <header class="sessions-panel-header">
+        <h2 id="sessions-panel-title">{{ text().sessions.panelTitle }}</h2>
+        <button #closeButton type="button" class="sessions-close" [attr.aria-label]="text().sessions.close" (click)="close()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </header>
+      <div class="sessions-panel-body">
+        @if (sessions().length === 0) {
+          <p class="sessions-empty">{{ text().sessions.empty }}</p>
+        } @else {
+          @for (session of sessions(); track session.id) {
+            <div class="sessions-item">
+              <button type="button" class="sessions-item-load" (click)="load(session)">
+                <span class="sessions-item-name">{{ session.name }}</span>
+                <span class="sessions-item-date">{{ formatDate(session.savedAt) }}</span>
+              </button>
+              <button
+                type="button"
+                class="sessions-item-remove"
+                [attr.aria-label]="text().sessions.remove + ': ' + session.name"
+                (click)="remove(session.id, $event)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

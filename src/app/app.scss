@@ -141,14 +141,19 @@
   outline: none;
 }
 
-.info-trigger {
+// `.preferences button` above (specificity 0,1,1) would otherwise beat a
+// standalone `.info-trigger`/`.sessions-trigger` class (0,1,0) for `padding`,
+// leaving 8px 11px in place of the intended 0 and pushing the icon off-center.
+.preferences button.info-trigger,
+.preferences button.sessions-trigger {
   display: grid;
   width: 34px;
   padding: 0;
   place-items: center;
 }
 
-.info-trigger svg {
+.info-trigger svg,
+.sessions-trigger svg {
   width: 17px;
   height: 17px;
 }

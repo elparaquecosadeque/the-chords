@@ -34,6 +34,12 @@
         [attr.aria-label]="languageLocalization().language" (click)="toggleLanguage()">
         {{ preferences.language() | uppercase }}
       </button>
+      <button type="button" class="sessions-trigger" [attr.aria-label]="languageLocalization().sessions.triggerLabel"
+        (click)="sessionsOpen.set(true)">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+        </svg>
+      </button>
       <button type="button" class="info-trigger" [attr.aria-label]="languageLocalization().infoModal.buttonLabel"
         (click)="infoOpen.set(true)">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -51,6 +57,7 @@
 
   <app-info-modal [open]="infoOpen()" [routeKey]="activeRouteKey()" [composeTab]="composeActiveTab()"
     (closed)="infoOpen.set(false)" />
+  <app-sessions-panel [open]="sessionsOpen()" (closed)="sessionsOpen.set(false)" />
 
   <footer class="site-footer">
     <div class="footer-links">

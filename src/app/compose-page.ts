@@ -6,13 +6,13 @@ import { BassNotesPage } from '@gblp/bass-notes';
 import { CircleOfFifthsComponent, CircleOfFifthsWheel } from '@gblp/circle-of-fifths';
 import { ChordFinderComponent } from '@gblp/chord-finder';
 import { detectKey } from '@gblp/music-theory';
-import { SoloinComponent } from '@gblp/soloin';
+import { SoloinComponent, type SoloinSessionState } from '@gblp/soloin';
 import { map } from 'rxjs';
 
 import { BackingTrack, type BackingTrackInitialState } from './backing-track';
 import { LocalizationService } from './localization.service';
 import { PreferencesService } from './preferences.service';
-import { decodeSession, encodeSession, type SavedSessionData } from './session-codec';
+import { decodeSession, encodeSession, type SavedSessionData, type SavedSessionSolo } from './session-codec';
 import { SessionsService } from './sessions.service';
 import { TempoService } from './tempo.service';
 
@@ -92,6 +92,9 @@ export class ComposePage {
   readonly saveNameOpen = signal(false);
   readonly saveNameValue = signal('');
   private pendingProg: string | null = null;
+  // Same reason as pendingProg: Soloin's panel is a viewChild that only resolves after
+  // the first render. `state: null` means "reset Soloin to its defaults".
+  private pendingSolo: { state: SoloinSessionState | null } | null = null;
   private lastAppliedParam: string | null = null;
 
   private readonly queryParamS = toSignal(
@@ -122,6 +125,35 @@ export class ComposePage {
       chordFinder.runSearch();
       this.pendingProg = null;
     });
+
+    effect(() => {
+      const soloin = this.soloin();
+      if (!soloin || !this.pendingSolo) return;
+      const { state } = this.pendingSolo;
+      this.pendingSolo = null;
+      this.restoreSolo(soloin, state);
+    });
+  }
+
+  // A session that carries Soloin state restores it (Key mode, marks, tuning…) and marks
+  // the Solo tab as already seeded, so the one-time seed from Rhythm doesn't overwrite it.
+  // A session without it puts Soloin back to defaults but leaves the seed untouched.
+  private restoreSolo(soloin: SoloinComponent, state: SoloinSessionState | null): void {
+    if (state) {
+      soloin.applySessionState(state);
+      this.seededTabs.add('solo');
+    } else {
+      soloin.resetSessionState();
+    }
+  }
+
+  private applySoloFromSession(solo: SavedSessionSolo | undefined): void {
+    const state: SoloinSessionState | null = solo
+      ? ({ marks: solo.m, tuning: solo.t, key: solo.k, scale: solo.s } as SoloinSessionState)
+      : null;
+    const soloin = this.soloin();
+    if (soloin) this.restoreSolo(soloin, state);
+    else this.pendingSolo = { state };
   }
 
   private applySession(session: SavedSessionData): void {
@@ -137,6 +169,8 @@ export class ComposePage {
     } else {
       this.pendingProg = session.prog;
     }
+
+    this.applySoloFromSession(session.solo);
   }
 
   toggleSaveNamePopover(): void {
@@ -165,12 +199,17 @@ export class ComposePage {
 
   private captureCurrentSession(): SavedSessionData {
     const backing = this.backingTrack()?.exportState() ?? {};
+    const soloState = this.soloin()?.getSessionState();
+    const solo: SavedSessionSolo | undefined = soloState
+      ? { m: soloState.marks, t: soloState.tuning, k: soloState.key, s: soloState.scale }
+      : undefined;
     return {
       v: 1,
       bpm: this.tempo.bpm(),
       beats: this.tempo.beatsPerMeasure(),
       prog: this.chordFinder()?.query() ?? '',
       ...backing,
+      ...(solo ? { solo } : {}),
     };
   }
 

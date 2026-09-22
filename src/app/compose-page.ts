@@ -1,13 +1,13 @@
 import { Component, computed, effect, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BassNotesPage } from '@gblp/bass-notes';
 import { CircleOfFifthsComponent, CircleOfFifthsWheel } from '@gblp/circle-of-fifths';
 import { ChordFinderComponent } from '@gblp/chord-finder';
 import { detectKey } from '@gblp/music-theory';
 import { SoloinComponent, type SoloinSessionState } from '@gblp/soloin';
-import { map } from 'rxjs';
+import { filter } from 'rxjs';
 
 import { BackingTrack, type BackingTrackInitialState } from './backing-track';
 import { LocalizationService } from './localization.service';
@@ -95,25 +95,48 @@ export class ComposePage {
   // Same reason as pendingProg: Soloin's panel is a viewChild that only resolves after
   // the first render. `state: null` means "reset Soloin to its defaults".
   private pendingSolo: { state: SoloinSessionState | null } | null = null;
-  private lastAppliedParam: string | null = null;
-
-  private readonly queryParamS = toSignal(
-    this.route.queryParamMap.pipe(map((params) => params.get('s'))),
-    { initialValue: this.route.snapshot.queryParamMap.get('s') },
-  );
+  // Set right before this page navigates to its own URL (see confirmSaveSession) so the
+  // query-param effect below doesn't re-apply what it just captured. Any other change to
+  // `s` — a deep link, a different saved session, even re-picking the active one now that
+  // onSameUrlNavigation is 'reload' — always applies.
+  private skipNextApply = false;
 
   constructor() {
-    // Applies a session whenever the `s` param changes to something we didn't
-    // just set ourselves (see confirmSaveSession) — covers both a fresh deep
-    // link and picking a different saved session while already on /compose.
-    effect(() => {
-      const param = this.queryParamS();
-      if (!param || param === this.lastAppliedParam) return;
-      const session = decodeSession(param);
-      if (!session) return;
-      this.lastAppliedParam = param;
-      this.applySession(session);
-    });
+    // This component's own creation was already navigated to by the time its
+    // constructor runs (that's why the route matched) — a plain event
+    // subscription below would miss that first navigation entirely, so its
+    // param is applied directly, once, up front.
+    const initialParam = this.route.snapshot.queryParamMap.get('s');
+    if (initialParam) {
+      const initialSession = decodeSession(initialParam);
+      if (initialSession) this.applySession(initialSession);
+    }
+
+    // Every navigation AFTER that one — a fresh deep link isn't one of these,
+    // it's the constructor-time case above, but a different saved session, or
+    // even re-picking the currently-active one (onSameUrlNavigation:'reload'
+    // makes that a real NavigationEnd instead of being silently ignored). A
+    // signal here would be the wrong tool: two identical `s` values are
+    // `Object.is`-equal, so a signal derived from them would never notice the
+    // second navigation happened at all — this subscribes to the router's
+    // NavigationEnd events directly instead, which are distinct objects every
+    // time regardless of what the resulting URL is.
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        if (this.skipNextApply) {
+          this.skipNextApply = false;
+          return;
+        }
+        const param = this.route.snapshot.queryParamMap.get('s');
+        if (!param) return;
+        const session = decodeSession(param);
+        if (!session) return;
+        this.applySession(session);
+      });
 
     // The Rhythm tab's chord-finder is only reachable once its view exists
     // (a viewChild, unlike the plain input() above) — apply a still-pending
@@ -193,7 +216,7 @@ export class ComposePage {
     this.saveNameValue.set('');
 
     const encoded = encodeSession(data);
-    this.lastAppliedParam = encoded; // already applied — skip the query-param effect's re-apply
+    this.skipNextApply = true; // already applied — skip the query-param effect's re-apply
     this.router.navigate([], { relativeTo: this.route, queryParams: { s: encoded }, replaceUrl: true });
   }
 

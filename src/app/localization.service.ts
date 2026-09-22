@@ -28,6 +28,7 @@ export class LocalizationService {
                     },
                     circlePreviewToggle: 'Círculo en vivo',
                     enharmonicNote: 'Las tonalidades se muestran con su deletreo estándar (p. ej. Db), que puede no coincidir con los sostenidos/bemoles que escribiste.',
+                    next: 'Siguiente',
                 },
                 infoModal: {
                     buttonLabel: 'Qué es esto',
@@ -40,7 +41,7 @@ export class LocalizationService {
                     bassNotes:
                         'La línea de bajo normalmente parte de la fundamental de cada acorde de tu progresión, marcando el pulso armónico. Desde ahí puedes acercarte a la siguiente fundamental con notas de paso o del propio acorde, dando movimiento sin perder el centro tonal de cada compás.',
                     soloin:
-                        'Para improvisar un solo sobre una progresión, primero identificas su tonalidad y luego eliges una escala o modo que combine con esos acordes: la escala mayor o menor de la tonalidad, un modo relacionado, o una pentatónica si buscas algo más simple y directo.',
+                        'Para improvisar un solo sobre una progresión, primero identificas su tonalidad y luego eliges una escala o modo que combine con esos acordes: la escala mayor o menor de la tonalidad, un modo relacionado, o una pentatónica si buscas algo más simple y directo. Si no conoces la tonalidad, también puedes marcar de oído las notas en el diapasón (pestaña Identificar) para que Soloin te la sugiera, y guardar esas marcas junto con tu sesión.',
                     backingTrack:
                         'Una pista de acompañamiento reproduce los acordes de tu progresión como si los tocara un instrumento de fondo (comping), dándote un contexto armónico real para ensayar tu solo o tu línea de bajo encima.',
                     compose:
@@ -124,6 +125,7 @@ export class LocalizationService {
                     },
                     circlePreviewToggle: 'Live circle',
                     enharmonicNote: 'Keys are shown in their standard spelling (e.g. Db), which may not match the sharps/flats you typed.',
+                    next: 'Next',
                 },
                 infoModal: {
                     buttonLabel: "What's this",
@@ -136,7 +138,7 @@ export class LocalizationService {
                     bassNotes:
                         "A bassline usually starts from each chord's root in your progression, laying down the harmonic pulse. From there you can approach the next root with passing or chord tones, adding movement while keeping each bar anchored to its key.",
                     soloin:
-                        "To solo over a progression, you first work out its key, then pick a scale or mode that fits those chords: the key's major or minor scale, a related mode, or a pentatonic if you want something simpler and more direct.",
+                        "To solo over a progression, you first work out its key, then pick a scale or mode that fits those chords: the key's major or minor scale, a related mode, or a pentatonic if you want something simpler and more direct. Don't know the key? Mark notes by ear on the fretboard instead (the Identify tab) and let Soloin suggest it, then save those marks with your session.",
                     backingTrack:
                         "A backing track plays your progression's chords like a background instrument would (comping), giving you a real harmonic bed to practice a solo or bassline against.",
                     compose:

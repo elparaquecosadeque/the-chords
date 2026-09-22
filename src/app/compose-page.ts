@@ -251,6 +251,21 @@ export class ComposePage {
     this.seedFromRhythm(tab);
   }
 
+  // Rhythm always counts as seen — it ships with a non-empty default progression
+  // ("C"), so there's no meaningful "not started yet" state for it. The other tabs
+  // reuse seededTabs (set the first time seedFromRhythm actually seeds them) rather
+  // than tracking a separate "visited" concept.
+  isTabDone(tab: ComposeTab): boolean {
+    return tab === 'rhythm' || this.seededTabs.has(tab);
+  }
+
+  goToNextTab(): void {
+    const next = this.tabs[this.tabs.indexOf(this.activeTab()) + 1];
+    if (next) this.setTab(next);
+  }
+
+  readonly isLastTab = computed(() => this.activeTab() === this.tabs[this.tabs.length - 1]);
+
   private seedFromRhythm(tab: ComposeTab): void {
     if (tab === 'rhythm' || this.seededTabs.has(tab)) return;
     const progression = this.chordFinder()?.query()?.trim();

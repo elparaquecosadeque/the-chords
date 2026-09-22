@@ -106,8 +106,9 @@ const TOURS: Record<'es' | 'en', Record<TourKey, TourCopy>> = {
       steps: [
         {
           element: '.mode-toggle',
-          title: 'Progresión o tonalidad',
-          description: 'Elige si quieres partir de una progresión de acordes o directamente de una tonalidad.',
+          title: 'Progresión, tonalidad o identificar',
+          description:
+            'Parte de una progresión de acordes, de una tonalidad directamente, o usa "Identificar" para marcar notas de oído en el diapasón y que Soloin te sugiera qué tonalidad y escala encajan.',
         },
         {
           element: '#soloin-progression',
@@ -130,6 +131,12 @@ const TOURS: Record<'es' | 'en', Record<TourKey, TourCopy>> = {
           element: '.actions',
           title: 'Exporta tu solo',
           description: 'Descarga el diagrama como imagen o cópialo como texto para guardarlo o compartirlo.',
+        },
+        {
+          element: '.mark-toggle',
+          title: 'Marca tus notas',
+          description:
+            'En modo Tonalidad, marca en el diapasón las notas relevantes para tu canción. Esas marcas también se pueden ver en Progresión (activa "Mostrar mis marcas") y se guardan con "Guardar sesión".',
         },
       ],
     },
@@ -222,8 +229,9 @@ const TOURS: Record<'es' | 'en', Record<TourKey, TourCopy>> = {
       steps: [
         {
           element: '.mode-toggle',
-          title: 'Progression or key',
-          description: 'Choose whether to start from a chord progression or directly from a key.',
+          title: 'Progression, key, or identify',
+          description:
+            'Start from a chord progression, from a key directly, or use "Identify" to mark notes by ear on the fretboard and have Soloin suggest which key and scale fit.',
         },
         {
           element: '#soloin-progression',
@@ -244,6 +252,12 @@ const TOURS: Record<'es' | 'en', Record<TourKey, TourCopy>> = {
           element: '.actions',
           title: 'Export your solo',
           description: 'Download the diagram as an image, or copy it as text to save or share.',
+        },
+        {
+          element: '.mark-toggle',
+          title: 'Mark your notes',
+          description:
+            'In Key mode, mark the notes on the fretboard that matter for your song. Those marks also show up in Progression (turn on "Show my marks") and get saved with "Save session".',
         },
       ],
     },

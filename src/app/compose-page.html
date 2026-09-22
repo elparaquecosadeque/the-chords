@@ -4,17 +4,31 @@
     <p>{{ localization.languageDictionary().composePage.intro }}</p>
   </header>
 
-  <div class="compose-tabs" role="tablist">
-    @for (tab of tabs; track tab; let i = $index) {
-      <button
-        type="button"
-        role="tab"
-        [attr.aria-selected]="activeTab() === tab"
-        [class.active]="activeTab() === tab"
-        (click)="setTab(tab)"
-      >
-        <span class="compose-tab-index">{{ i + 1 }}</span>
-        {{ localization.languageDictionary().composePage.tabs[tab] }}
+  <div class="compose-tabs-row">
+    <div class="compose-tabs" role="tablist">
+      @for (tab of tabs; track tab; let i = $index) {
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab() === tab"
+          [class.active]="activeTab() === tab"
+          (click)="setTab(tab)"
+        >
+          <span class="compose-tab-index" [class.done]="isTabDone(tab)" [attr.aria-label]="i + 1">
+            @if (isTabDone(tab)) {
+              <span aria-hidden="true">✓</span>
+            } @else {
+              <span aria-hidden="true">{{ i + 1 }}</span>
+            }
+          </span>
+          {{ localization.languageDictionary().composePage.tabs[tab] }}
+        </button>
+      }
+    </div>
+
+    @if (!isLastTab()) {
+      <button type="button" class="compose-next-btn" (click)="goToNextTab()">
+        {{ localization.languageDictionary().composePage.next }} →
       </button>
     }
   </div>

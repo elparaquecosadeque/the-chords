@@ -25,7 +25,7 @@
           <h3>{{ text().modalInterchange.yourProgression }}</h3>
           <div class="interchange-playback-tools">
             <button type="button" class="interchange-play-seq" (click)="playSequence()">
-              ▶ {{ text().modalInterchange.playSequence }}
+              ▶ {{ hasChanges() ? text().modalInterchange.playModified : text().modalInterchange.playSequence }}
             </button>
             <label class="interchange-volume">
               <span aria-hidden="true">🔊</span>
@@ -51,6 +51,7 @@
               class="interchange-chip"
               [class.selected]="selectedChordIndex() === chip.chordIndex"
               [class.chromatic]="chip.degree === null"
+              [class.playing]="playingIndex() === chip.chordIndex"
               [attr.title]="chip.degree === null ? text().modalInterchange.chromaticNote : null"
               (click)="onChipClick(chip)"
               (mouseenter)="previewChip(chip)"
@@ -63,6 +64,22 @@
             </button>
           }
         </div>
+
+        @if (hasChanges()) {
+          <div class="interchange-original-row">
+            <span class="interchange-original-label">{{ text().modalInterchange.originalLabel }}</span>
+            <div class="interchange-chips interchange-chips-original">
+              @for (chip of originalChips(); track chip.chordIndex) {
+                <span class="interchange-chip interchange-chip-static" [class.playing]="playingIndex() === chip.chordIndex">
+                  {{ chip.label }}
+                </span>
+              }
+            </div>
+            <button type="button" class="interchange-play-seq small" (click)="playOriginal()">
+              ▶ {{ text().modalInterchange.playOriginal }}
+            </button>
+          </div>
+        }
       </section>
 
       @if (!detectedKey()) {

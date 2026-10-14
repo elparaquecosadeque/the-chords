@@ -228,6 +228,33 @@
     cursor: not-allowed;
     opacity: 0.6;
   }
+
+  &.playing {
+    animation: interchange-chip-pulse 500ms ease-out;
+  }
+
+  &.interchange-chip-static {
+    color: var(--chords-muted);
+    background: transparent;
+    border-style: dashed;
+    cursor: default;
+    padding-block: 5px;
+  }
+}
+
+@keyframes interchange-chip-pulse {
+  0% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--chords-primary) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--chords-primary) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interchange-chip.playing {
+    animation: none;
+  }
 }
 
 .interchange-chip-chord {
@@ -240,6 +267,35 @@
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.03em;
+}
+
+.interchange-original-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--chords-border);
+}
+
+.interchange-original-label {
+  flex: 0 0 auto;
+  color: var(--chords-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.interchange-chips-original {
+  flex: 1 1 auto;
+}
+
+.interchange-play-seq.small {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 0.68rem;
 }
 
 .interchange-empty,

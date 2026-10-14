@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { buildChordTones, noteName, type Key, type Note } from '@gblp/music-theory';
 import { SplendidGrandPiano, type Smplr } from 'smplr';
 
@@ -54,7 +54,7 @@ function voiceTriadMidi(tones: readonly Note[], root: Note): number[] {
   templateUrl: './modal-interchange.html',
   styleUrl: './modal-interchange.scss',
 })
-export class ModalInterchange {
+export class ModalInterchange implements OnDestroy {
   private readonly localization = inject(LocalizationService);
   private readonly tempo = inject(TempoService);
   private readonly closeButton = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
@@ -72,6 +72,14 @@ export class ModalInterchange {
   readonly volume = signal(0.7); // 0-1, drives both the full-sequence playback and every per-chord preview
   readonly hoverPreviewEnabled = signal(true); // off: hover goes silent, click previews instead
   readonly hoverCompare = signal<HoverCompare | null>(null);
+  // Snapshot of the progression as it stood when the modal opened — captured
+  // once (swaps mutate the live `entries` via the parent, never this), so
+  // the user can A/B it against whatever they've changed so far without
+  // losing the "before" picture.
+  readonly originalEntries = signal<TimelineSlot[] | null>(null);
+  // chordIndex of whichever chord is sounding right now during a full-sequence
+  // playback (either row) — drives the pulse on both the live and original chips.
+  readonly playingIndex = signal<number | null>(null);
 
   // "Do mayor · modo Jónico de Do" — the detected key framed as the common
   // parallel tonic every row of the matrix borrows against (diatonicChords
@@ -103,6 +111,26 @@ export class ModalInterchange {
   readonly selectedChip = computed(() => {
     const index = this.selectedChordIndex();
     return this.chips().find((c) => c.chordIndex === index) ?? null;
+  });
+
+  readonly originalChips = computed<ProgressionChip[]>(() => (this.originalEntries() ?? []).map((entry) => ({
+    chordIndex: entry.index,
+    label: entry.chord.raw,
+    root: entry.chord.root,
+    quality: null, // the original row is reference-only — only the live row is ever clicked to select/swap
+    degree: null,
+  })));
+
+  // True once at least one chord differs from the snapshot taken when the
+  // modal opened — the compare-playback UI only earns its place once
+  // there's actually something to compare.
+  readonly hasChanges = computed(() => {
+    const original = this.originalEntries();
+    if (!original) return false;
+    return this.entries().some((entry) => {
+      const before = original.find((o) => o.index === entry.index);
+      return before && (before.chord.root !== entry.chord.root || before.chord.quality !== entry.chord.quality);
+    });
   });
 
   readonly matrix = computed<MatrixRow[]>(() => {
@@ -156,6 +184,15 @@ export class ModalInterchange {
     });
     effect(() => {
       this.closeButton()?.nativeElement.focus();
+    });
+    // Captures the "before" snapshot exactly once, the first time real
+    // entries show up — a fresh modal instance per open (the backdrop blocks
+    // the page underneath, so the section can't change while it's open).
+    effect(() => {
+      const list = this.entries();
+      if (list.length > 0 && this.originalEntries() === null) {
+        this.originalEntries.set([...list]);
+      }
     });
   }
 
@@ -238,23 +275,57 @@ export class ModalInterchange {
     this.volume.set(value / 100);
   }
 
-  // Plays every chord in the progression once, back to back — a quick "how
-  // does the whole thing sound" pass, distinct from the per-chord hover
-  // preview. Uses the real chord quality (not the triad reduction preview()
-  // uses), so it's faithful to what's actually in the progression.
-  async playSequence(): Promise<void> {
+  private readonly pulseTimeouts = new Set<ReturnType<typeof setTimeout>>();
+
+  private clearPulse(): void {
+    for (const id of this.pulseTimeouts) clearTimeout(id);
+    this.pulseTimeouts.clear();
+    this.playingIndex.set(null);
+  }
+
+  // Plays a full progression once, back to back — a quick "how does the
+  // whole thing sound" pass, distinct from the per-chord hover preview. Uses
+  // the real chord quality (not the triad reduction preview() uses), so
+  // it's faithful to what's actually in the progression. Pulses each chip
+  // in sync with its own onset, same delay-compensated setTimeout technique
+  // backing-track.ts's own beat pulse uses — scheduling the *visual* flip
+  // against wall-clock time since Web Audio's own scheduling doesn't fire
+  // DOM callbacks.
+  private async playEntries(list: TimelineSlot[]): Promise<void> {
+    if (!list.length) return;
     const instrument = await this.ensureInstrument();
     const ctx = this.tempo.audioContext;
     const velocity = Math.round(100 * this.volume());
     const STEP = 0.62; // seconds between chord onsets
-    this.entries().forEach((entry, i) => {
+    this.clearPulse();
+    list.forEach((entry, i) => {
       const tones = buildChordTones(entry.chord.root, entry.chord.quality);
       const midiNotes = voiceTriadMidi(tones, entry.chord.root);
       const time = ctx.currentTime + i * STEP;
       for (const note of midiNotes) {
         instrument.start({ note, time, duration: 0.55, velocity });
       }
+      const delayMs = Math.max(0, (time - ctx.currentTime) * 1000);
+      const onId = setTimeout(() => {
+        this.pulseTimeouts.delete(onId);
+        this.playingIndex.set(entry.index);
+        const offId = setTimeout(() => {
+          this.pulseTimeouts.delete(offId);
+          if (this.playingIndex() === entry.index) this.playingIndex.set(null);
+        }, 500);
+        this.pulseTimeouts.add(offId);
+      }, delayMs);
+      this.pulseTimeouts.add(onId);
     });
+  }
+
+  playSequence(): void {
+    void this.playEntries(this.entries());
+  }
+
+  playOriginal(): void {
+    const original = this.originalEntries();
+    if (original) void this.playEntries(original);
   }
 
   chipDegreeLabel(chip: ProgressionChip): string | null {
@@ -298,5 +369,9 @@ export class ModalInterchange {
   degreeHeadLabel(degree: number): string {
     const quality = this.originalDegreeQualities()[degree] ?? 'major';
     return romanNumeral(degree, quality);
+  }
+
+  ngOnDestroy(): void {
+    this.clearPulse();
   }
 }

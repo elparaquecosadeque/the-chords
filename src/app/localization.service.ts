@@ -108,6 +108,7 @@ export class LocalizationService {
                     keyInfoNote: 'Los 7 modos paralelos comparados abajo parten de esta misma tónica.',
                     playSequence: 'Reproducir progresión',
                     volumeLabel: 'Volumen de reproducción',
+                    hoverPreviewLabel: 'Sonido al pasar el cursor',
                     tierLabels: { same: 'Igual al original', safe: 'Recomendado', caution: 'Con intención', risky: 'Rompe el reposo' },
                     roleNames: {
                         tonic: 'Tónica',
@@ -244,6 +245,7 @@ export class LocalizationService {
                     keyInfoNote: 'The 7 parallel modes compared below all share this same tonic.',
                     playSequence: 'Play progression',
                     volumeLabel: 'Playback volume',
+                    hoverPreviewLabel: 'Sound on hover',
                     tierLabels: { same: 'Same as original', safe: 'Recommended', caution: 'With intention', risky: 'Breaks the rest' },
                     roleNames: {
                         tonic: 'Tonic',

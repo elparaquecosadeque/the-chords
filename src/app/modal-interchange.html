@@ -38,6 +38,10 @@
                 [attr.aria-label]="text().modalInterchange.volumeLabel"
               />
             </label>
+            <label class="interchange-hover-toggle">
+              <input type="checkbox" [checked]="hoverPreviewEnabled()" (change)="onHoverToggle($event)" />
+              {{ text().modalInterchange.hoverPreviewLabel }}
+            </label>
           </div>
         </div>
         <div class="interchange-chips">
@@ -48,7 +52,7 @@
               [class.selected]="selectedChordIndex() === chip.chordIndex"
               [class.chromatic]="chip.degree === null"
               [attr.title]="chip.degree === null ? text().modalInterchange.chromaticNote : null"
-              (click)="selectChip(chip)"
+              (click)="onChipClick(chip)"
               (mouseenter)="previewChip(chip)"
               (focus)="previewChip(chip)"
             >
@@ -105,7 +109,7 @@
                   [class.col-dimmed]="!isColumnSelected($index)"
                   (mouseenter)="hoverCell(row.mode, $index, cell)"
                   (focus)="hoverCell(row.mode, $index, cell)"
-                  (click)="applyCell($index, cell)"
+                  (click)="onCellClick($index, cell)"
                 >
                   {{ chordLabel(cell.root, cell.quality) }}
                 </button>

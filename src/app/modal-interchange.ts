@@ -70,6 +70,7 @@ export class ModalInterchange {
   readonly tierOrder: readonly Tier[] = ['safe', 'caution', 'risky'];
   readonly selectedChordIndex = signal<number | null>(null);
   readonly volume = signal(0.7); // 0-1, drives both the full-sequence playback and every per-chord preview
+  readonly hoverPreviewEnabled = signal(true); // off: hover goes silent, click previews instead
   readonly hoverCompare = signal<HoverCompare | null>(null);
 
   // "Do mayor · modo Jónico de Do" — the detected key framed as the common
@@ -153,6 +154,16 @@ export class ModalInterchange {
     });
   }
 
+  // Picking a progression chord always plays it when hover-preview is off —
+  // otherwise there'd be no way to hear it at all, since hover stays silent.
+  // When hover-preview is on, the hover itself already covered that.
+  onChipClick(chip: ProgressionChip): void {
+    if (!this.hoverPreviewEnabled() && chip.quality !== null) {
+      void this.preview(chip.root, chip.quality);
+    }
+    this.selectChip(chip);
+  }
+
   selectChip(chip: ProgressionChip): void {
     if (chip.degree === null) return;
     this.selectedChordIndex.set(chip.chordIndex);
@@ -169,6 +180,21 @@ export class ModalInterchange {
     if (!chip || chip.degree !== degree) return;
     this.swap.emit({ chordIndex: chip.chordIndex, root: cell.root, quality: cell.quality });
     this.hoverCompare.set(null);
+  }
+
+  // With hover-preview off, a cell's sound only happens on click — same
+  // reasoning as onChipClick above. Applying still goes through applyCell's
+  // own guard, so clicking a cell outside the selected column previews it
+  // without side effects.
+  onCellClick(degree: number, cell: DegreeCell): void {
+    if (!this.hoverPreviewEnabled()) {
+      void this.preview(cell.root, cell.quality);
+    }
+    this.applyCell(degree, cell);
+  }
+
+  onHoverToggle(event: Event): void {
+    this.hoverPreviewEnabled.set((event.target as HTMLInputElement).checked);
   }
 
   isColumnSelected(degree: number): boolean {
@@ -198,7 +224,7 @@ export class ModalInterchange {
   }
 
   previewChip(chip: ProgressionChip): void {
-    if (chip.quality === null) return;
+    if (!this.hoverPreviewEnabled() || chip.quality === null) return;
     void this.preview(chip.root, chip.quality);
   }
 
@@ -237,7 +263,7 @@ export class ModalInterchange {
   // app ships (no separate grouped/chip layout), so this is where "what's
   // about to change" lives.
   hoverCell(mode: ParallelMode, degree: number, cell: DegreeCell): void {
-    void this.preview(cell.root, cell.quality);
+    if (this.hoverPreviewEnabled()) void this.preview(cell.root, cell.quality);
     const chip = this.selectedChip();
     if (!chip || chip.degree !== degree) return;
     this.hoverCompare.set({

@@ -171,6 +171,20 @@
   }
 }
 
+.interchange-hover-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--chords-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  input[type='checkbox'] {
+    accent-color: var(--chords-primary);
+  }
+}
+
 .interchange-chips {
   display: flex;
   flex-wrap: wrap;

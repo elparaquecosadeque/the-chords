@@ -82,6 +82,27 @@
   outline: none;
 }
 
+.interchange-key-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--chords-primary) 7%, transparent);
+  border-bottom: 1px solid var(--chords-border);
+  font-size: 0.78rem;
+}
+
+.interchange-key-name {
+  color: var(--chords-primary);
+  font-weight: 800;
+}
+
+.interchange-key-note {
+  color: var(--chords-muted);
+  line-height: 1.5;
+}
+
 .interchange-body {
   display: flex;
   flex-direction: column;
@@ -89,13 +110,65 @@
   padding: 20px;
 }
 
+.interchange-progression-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+
 .interchange-progression h3 {
-  margin: 0 0 8px;
+  margin: 0;
   color: var(--chords-primary);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.interchange-playback-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.interchange-play-seq {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  color: var(--chords-primary);
+  background: transparent;
+  border: 1px solid var(--chords-primary);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background 150ms ease;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--chords-on-primary);
+    background: var(--chords-primary);
+    outline: none;
+  }
+}
+
+.interchange-volume {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--chords-muted);
+  font-size: 0.78rem;
+
+  input[type='range'] {
+    width: 72px;
+    accent-color: var(--chords-primary);
+  }
 }
 
 .interchange-chips {
@@ -105,13 +178,15 @@
 }
 
 .interchange-chip {
-  padding: 8px 14px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 14px;
   color: var(--chords-text);
   background: var(--chords-surface);
   border: 1px solid var(--chords-border);
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 750;
+  border-radius: 14px;
   cursor: pointer;
   transition:
     border-color 150ms ease,
@@ -127,6 +202,11 @@
     color: var(--chords-on-primary);
     background: var(--chords-secondary);
     border-color: var(--chords-secondary);
+
+    .interchange-chip-degree {
+      color: var(--chords-on-primary);
+      opacity: 0.8;
+    }
   }
 
   &.chromatic {
@@ -134,6 +214,18 @@
     cursor: not-allowed;
     opacity: 0.6;
   }
+}
+
+.interchange-chip-chord {
+  font-size: 0.85rem;
+  font-weight: 750;
+}
+
+.interchange-chip-degree {
+  color: var(--chords-primary);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
 .interchange-empty,
@@ -152,6 +244,46 @@
   border-radius: 10px;
   font-size: 0.82rem;
   font-weight: 650;
+}
+
+.interchange-compare {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--chords-secondary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--chords-secondary) 40%, transparent);
+  border-radius: 10px;
+}
+
+.interchange-compare-chip {
+  padding: 3px 9px;
+  border-radius: 7px;
+  font-weight: 800;
+  font-size: 0.8rem;
+
+  &.from {
+    color: var(--chords-muted);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px dashed var(--chords-border);
+  }
+
+  &.to {
+    color: var(--chords-on-primary);
+    background: var(--chords-secondary);
+  }
+}
+
+.interchange-compare-arrow {
+  color: var(--chords-muted);
+}
+
+.interchange-compare-meta {
+  margin-left: auto;
+  color: var(--chords-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .interchange-legend {

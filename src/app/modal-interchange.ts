@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
-import { buildChordTones, type Key, type Note } from '@gblp/music-theory';
+import { buildChordTones, noteName, type Key, type Note } from '@gblp/music-theory';
 import { SplendidGrandPiano, type Smplr } from 'smplr';
 
 import type { TimelineSlot } from './backing-track';
@@ -32,6 +32,13 @@ interface MatrixRow {
   cells: DegreeCell[];
 }
 
+interface HoverCompare {
+  mode: string;
+  from: string;
+  to: string;
+  tierLabel: string;
+}
+
 const ROOT_MIDI = 60; // C4 — a comfortable register for a short preview, independent of backing-track's own bed register.
 
 // Simple ascending close-position voicing, same idea as backing-track's own
@@ -62,6 +69,22 @@ export class ModalInterchange {
   readonly degrees = [0, 1, 2, 3, 4, 5, 6] as const;
   readonly tierOrder: readonly Tier[] = ['safe', 'caution', 'risky'];
   readonly selectedChordIndex = signal<number | null>(null);
+  readonly volume = signal(0.7); // 0-1, drives both the full-sequence playback and every per-chord preview
+  readonly hoverCompare = signal<HoverCompare | null>(null);
+
+  // "Do mayor · modo Jónico de Do" — the detected key framed as the common
+  // parallel tonic every row of the matrix borrows against (diatonicChords
+  // itself always reads off the Ionian scale for a major key, Aeolian for a
+  // minor one, so that's the "home" mode this key actually sits in).
+  readonly keyInfo = computed(() => {
+    const key = this.detectedKey();
+    if (!key) return null;
+    const t = this.text().modalInterchange;
+    const tonic = noteName(key.root);
+    const qualityWord = key.mode === 'major' ? t.keyMajor : t.keyMinor;
+    const parentMode: ParallelMode = key.mode === 'major' ? 'ionian' : 'aeolian';
+    return t.keyInfo(tonic, qualityWord, t.modeNames[parentMode]);
+  });
 
   readonly chips = computed<ProgressionChip[]>(() => {
     const key = this.detectedKey();
@@ -133,6 +156,7 @@ export class ModalInterchange {
   selectChip(chip: ProgressionChip): void {
     if (chip.degree === null) return;
     this.selectedChordIndex.set(chip.chordIndex);
+    this.hoverCompare.set(null);
   }
 
   // `degree` comes from the cell's own column, verified against the selected
@@ -144,6 +168,7 @@ export class ModalInterchange {
     const chip = this.selectedChip();
     if (!chip || chip.degree !== degree) return;
     this.swap.emit({ chordIndex: chip.chordIndex, root: cell.root, quality: cell.quality });
+    this.hoverCompare.set(null);
   }
 
   isColumnSelected(degree: number): boolean {
@@ -166,14 +191,61 @@ export class ModalInterchange {
     const ctx = this.tempo.audioContext;
     const tones = buildChordTones(root, quality);
     const midiNotes = voiceTriadMidi(tones, root);
+    const velocity = Math.round(100 * this.volume());
     for (const note of midiNotes) {
-      instrument.start({ note, time: ctx.currentTime, duration: 0.9 });
+      instrument.start({ note, time: ctx.currentTime, duration: 0.9, velocity });
     }
   }
 
   previewChip(chip: ProgressionChip): void {
     if (chip.quality === null) return;
     void this.preview(chip.root, chip.quality);
+  }
+
+  onVolumeInput(event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    this.volume.set(value / 100);
+  }
+
+  // Plays every chord in the progression once, back to back — a quick "how
+  // does the whole thing sound" pass, distinct from the per-chord hover
+  // preview. Uses the real chord quality (not the triad reduction preview()
+  // uses), so it's faithful to what's actually in the progression.
+  async playSequence(): Promise<void> {
+    const instrument = await this.ensureInstrument();
+    const ctx = this.tempo.audioContext;
+    const velocity = Math.round(100 * this.volume());
+    const STEP = 0.62; // seconds between chord onsets
+    this.entries().forEach((entry, i) => {
+      const tones = buildChordTones(entry.chord.root, entry.chord.quality);
+      const midiNotes = voiceTriadMidi(tones, entry.chord.root);
+      const time = ctx.currentTime + i * STEP;
+      for (const note of midiNotes) {
+        instrument.start({ note, time, duration: 0.55, velocity });
+      }
+    });
+  }
+
+  chipDegreeLabel(chip: ProgressionChip): string | null {
+    if (chip.degree === null) return null;
+    const qualities = this.originalDegreeQualities();
+    return romanNumeral(chip.degree, qualities[chip.degree] ?? 'major');
+  }
+
+  // Updates the hover comparison panel ("C → Cm — Recomendado") alongside the
+  // existing audio preview — the matrix is the only borrowed-chord view this
+  // app ships (no separate grouped/chip layout), so this is where "what's
+  // about to change" lives.
+  hoverCell(mode: ParallelMode, degree: number, cell: DegreeCell): void {
+    void this.preview(cell.root, cell.quality);
+    const chip = this.selectedChip();
+    if (!chip || chip.degree !== degree) return;
+    this.hoverCompare.set({
+      mode: this.text().modalInterchange.modeNames[mode],
+      from: chip.label,
+      to: chordLabel(cell.root, cell.quality),
+      tierLabel: this.text().modalInterchange.tierLabels[cell.tier],
+    });
   }
 
   close(): void {

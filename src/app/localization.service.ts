@@ -101,6 +101,13 @@ export class LocalizationService {
                         `Vas a reemplazar: ${chord} (${degree}, ${role})`,
                     chromaticNote: 'Acorde cromático — sin intercambio modal directo en esta tonalidad.',
                     emptyKey: 'No se detectó una tonalidad clara para esta sección.',
+                    keyMajor: 'mayor',
+                    keyMinor: 'menor',
+                    keyInfo: (tonic: string, qualityWord: string, modeLabel: string) =>
+                        `${tonic} ${qualityWord} · modo ${modeLabel} de ${tonic}`,
+                    keyInfoNote: 'Los 7 modos paralelos comparados abajo parten de esta misma tónica.',
+                    playSequence: 'Reproducir progresión',
+                    volumeLabel: 'Volumen de reproducción',
                     tierLabels: { same: 'Igual al original', safe: 'Recomendado', caution: 'Con intención', risky: 'Rompe el reposo' },
                     roleNames: {
                         tonic: 'Tónica',
@@ -230,6 +237,13 @@ export class LocalizationService {
                         `Replacing: ${chord} (${degree}, ${role})`,
                     chromaticNote: 'Chromatic chord — no direct modal interchange in this key.',
                     emptyKey: "Couldn't detect a clear key for this section.",
+                    keyMajor: 'Major',
+                    keyMinor: 'Minor',
+                    keyInfo: (tonic: string, qualityWord: string, modeLabel: string) =>
+                        `${tonic} ${qualityWord} · ${modeLabel} mode of ${tonic}`,
+                    keyInfoNote: 'The 7 parallel modes compared below all share this same tonic.',
+                    playSequence: 'Play progression',
+                    volumeLabel: 'Playback volume',
                     tierLabels: { same: 'Same as original', safe: 'Recommended', caution: 'With intention', risky: 'Breaks the rest' },
                     roleNames: {
                         tonic: 'Tonic',

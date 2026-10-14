@@ -12,9 +12,34 @@
       </button>
     </header>
 
+    @if (keyInfo(); as info) {
+      <div class="interchange-key-context">
+        <span class="interchange-key-name">{{ info }}</span>
+        <span class="interchange-key-note">{{ text().modalInterchange.keyInfoNote }}</span>
+      </div>
+    }
+
     <div class="interchange-body">
       <section class="interchange-progression">
-        <h3>{{ text().modalInterchange.yourProgression }}</h3>
+        <div class="interchange-progression-head">
+          <h3>{{ text().modalInterchange.yourProgression }}</h3>
+          <div class="interchange-playback-tools">
+            <button type="button" class="interchange-play-seq" (click)="playSequence()">
+              ▶ {{ text().modalInterchange.playSequence }}
+            </button>
+            <label class="interchange-volume">
+              <span aria-hidden="true">🔊</span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                [value]="volume() * 100"
+                (input)="onVolumeInput($event)"
+                [attr.aria-label]="text().modalInterchange.volumeLabel"
+              />
+            </label>
+          </div>
+        </div>
         <div class="interchange-chips">
           @for (chip of chips(); track chip.chordIndex) {
             <button
@@ -27,7 +52,10 @@
               (mouseenter)="previewChip(chip)"
               (focus)="previewChip(chip)"
             >
-              {{ chip.label }}
+              <span class="interchange-chip-chord">{{ chip.label }}</span>
+              @if (chipDegreeLabel(chip); as degreeLabel) {
+                <span class="interchange-chip-degree">{{ degreeLabel }}</span>
+              }
             </button>
           }
         </div>
@@ -38,6 +66,14 @@
       } @else {
         @if (replacingLabel(); as label) {
           <p class="interchange-replacing">{{ label }}</p>
+        }
+        @if (hoverCompare(); as compare) {
+          <div class="interchange-compare">
+            <span class="interchange-compare-chip from">{{ compare.from }}</span>
+            <span class="interchange-compare-arrow" aria-hidden="true">→</span>
+            <span class="interchange-compare-chip to">{{ compare.to }}</span>
+            <span class="interchange-compare-meta">{{ compare.mode }} · {{ compare.tierLabel }}</span>
+          </div>
         }
         <p class="interchange-hint">{{ text().modalInterchange.matrixHint }}</p>
 
@@ -67,8 +103,8 @@
                   [class]="'tier-' + cell.tier"
                   [class.col-selected]="isColumnSelected($index)"
                   [class.col-dimmed]="!isColumnSelected($index)"
-                  (mouseenter)="preview(cell.root, cell.quality)"
-                  (focus)="preview(cell.root, cell.quality)"
+                  (mouseenter)="hoverCell(row.mode, $index, cell)"
+                  (focus)="hoverCell(row.mode, $index, cell)"
                   (click)="applyCell($index, cell)"
                 >
                   {{ chordLabel(cell.root, cell.quality) }}

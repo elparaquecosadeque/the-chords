@@ -116,10 +116,15 @@ export class ModalInterchange {
   readonly originalDegreeQualities = computed(() => {
     const key = this.detectedKey();
     if (!key) return [];
-    // Degree 0's Ionian/Aeolian row is always tier 'same' — read the original
-    // quality straight off it instead of re-deriving diatonicChords here.
-    const ionianRow = degreeMatrix(key).ionian;
-    return ionianRow.map((c) => c.quality);
+    // The "home" row is Ionian for a major key, Aeolian for a minor one —
+    // same rule diatonicChords() itself uses. Reading the wrong row here
+    // doesn't touch the matrix's own tier math (degreeMatrix() calls
+    // diatonicChords(key) directly), only the Roman-numeral casing shown to
+    // the user — but for a minor key it would wrongly print "I ii iii..."
+    // instead of "i ii° III...".
+    const homeMode = key.mode === 'major' ? 'ionian' : 'aeolian';
+    const homeRow = degreeMatrix(key)[homeMode];
+    return homeRow.map((c) => c.quality);
   });
 
   readonly replacingLabel = computed(() => {

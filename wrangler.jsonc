@@ -1,6 +1,9 @@
 {
   "name": "the-chords",
   "compatibility_date": "2026-01-01",
+  // Reachable only via the custom domain (the-chords-stage.oficinamentaldebruno.com),
+  // not the account-handle-based *.workers.dev URL.
+  "workers_dev": false,
   "assets": {
     "directory": "./dist/the-chords/browser",
     "not_found_handling": "single-page-application"

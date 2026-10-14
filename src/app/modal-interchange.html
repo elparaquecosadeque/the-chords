@@ -1,0 +1,83 @@
+<div class="interchange-backdrop" (click)="onBackdropClick($event)">
+  <div class="interchange-panel" role="dialog" aria-modal="true" aria-labelledby="interchange-title">
+    <header class="interchange-header">
+      <div class="interchange-heading">
+        <h2 id="interchange-title">{{ text().modalInterchange.title }}</h2>
+        <p class="interchange-subtitle">{{ text().modalInterchange.subtitle }}</p>
+      </div>
+      <button #closeButton type="button" class="interchange-close" [attr.aria-label]="text().modalInterchange.close" (click)="close()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+    </header>
+
+    <div class="interchange-body">
+      <section class="interchange-progression">
+        <h3>{{ text().modalInterchange.yourProgression }}</h3>
+        <div class="interchange-chips">
+          @for (chip of chips(); track chip.chordIndex) {
+            <button
+              type="button"
+              class="interchange-chip"
+              [class.selected]="selectedChordIndex() === chip.chordIndex"
+              [class.chromatic]="chip.degree === null"
+              [attr.title]="chip.degree === null ? text().modalInterchange.chromaticNote : null"
+              (click)="selectChip(chip)"
+              (mouseenter)="previewChip(chip)"
+              (focus)="previewChip(chip)"
+            >
+              {{ chip.label }}
+            </button>
+          }
+        </div>
+      </section>
+
+      @if (!detectedKey()) {
+        <p class="interchange-empty">{{ text().modalInterchange.emptyKey }}</p>
+      } @else {
+        @if (replacingLabel(); as label) {
+          <p class="interchange-replacing">{{ label }}</p>
+        }
+        <p class="interchange-hint">{{ text().modalInterchange.matrixHint }}</p>
+
+        <div class="interchange-legend">
+          @for (tier of tierOrder; track tier) {
+            <span class="interchange-legend-item">
+              <span class="interchange-legend-dot" [class]="'tier-' + tier" aria-hidden="true"></span>
+              {{ text().modalInterchange.tierLabels[tier] }}
+            </span>
+          }
+        </div>
+
+        <div class="interchange-matrix-scroll">
+          <div class="interchange-matrix">
+            <div class="interchange-matrix-corner"></div>
+            @for (degree of degrees; track degree) {
+              <div class="interchange-matrix-col-head" [class.selected]="isColumnSelected(degree)">
+                {{ degreeHeadLabel(degree) }}
+              </div>
+            }
+            @for (row of matrix(); track row.mode) {
+              <div class="interchange-matrix-row-head">{{ row.label }}</div>
+              @for (cell of row.cells; track $index) {
+                <button
+                  type="button"
+                  class="interchange-matrix-cell"
+                  [class]="'tier-' + cell.tier"
+                  [class.col-selected]="isColumnSelected($index)"
+                  [class.col-dimmed]="!isColumnSelected($index)"
+                  (mouseenter)="preview(cell.root, cell.quality)"
+                  (focus)="preview(cell.root, cell.quality)"
+                  (click)="applyCell($index, cell)"
+                >
+                  {{ chordLabel(cell.root, cell.quality) }}
+                </button>
+              }
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

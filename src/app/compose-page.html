@@ -59,7 +59,11 @@
     </div>
   </div>
 
-  <app-backing-track [progression]="rhythmProgression()" [initialState]="backingTrackInitialState()" />
+  <app-backing-track
+    [progression]="rhythmProgression()"
+    [initialState]="backingTrackInitialState()"
+    (progressionEdited)="onProgressionEdited($event)"
+  />
 
   <div class="compose-panel" [hidden]="activeTab() !== 'rhythm'">
     <div class="rhythm-layout">

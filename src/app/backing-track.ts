@@ -1,8 +1,10 @@
-import { Component, ElementRef, OnDestroy, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { buildChordTones, parseChordName, suggestChordName, type ParsedChord } from '@gblp/music-theory';
+import { Component, ElementRef, OnDestroy, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { buildChordTones, detectKey, parseChordName, suggestChordName, type Key, type Note, type ParsedChord } from '@gblp/music-theory';
 import { Soundfont, SplendidGrandPiano, type Smplr } from 'smplr';
 
 import { LocalizationService } from './localization.service';
+import { chordLabel, type TriadQuality } from './modal-interchange-theory';
+import { ModalInterchange } from './modal-interchange';
 import type { SavedSessionSectionState } from './session-codec';
 import { TempoService, type BeatEvent } from './tempo.service';
 
@@ -98,9 +100,49 @@ function parseSongStructure(raw: string): SongSection[] {
     .filter((s): s is SongSection => s !== null);
 }
 
+// Replaces the chordIndex-th successfully-parsed token in a comma-separated
+// chord list, leaving unparsed tokens untouched and not counted toward the
+// index — mirrors parseChordList's own "only parsed tokens become `chords`"
+// rule, so this index always matches TimelineSlot.index / section.chords[i].
+function replaceNthParsedToken(segment: string, chordIndex: number, newToken: string): string {
+  const tokens = segment
+    .split(',')
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+  let count = 0;
+  const next = tokens.map((token) => {
+    if (!parseChordName(token)) return token;
+    const isTarget = count === chordIndex;
+    count++;
+    return isTarget ? newToken : token;
+  });
+  return next.join(', ');
+}
+
+// Applies one modal-interchange swap to the raw progression text, preserving
+// song-structure naming/other sections untouched — same split logic as
+// parseSongStructure's own section indexing, so `sectionKey` lines up.
+function applyChordSwap(raw: string, sectionKey: number, chordIndex: number, newToken: string): string {
+  if (!raw.includes(':')) {
+    return replaceNthParsedToken(raw, chordIndex, newToken);
+  }
+  const segments = raw
+    .split(';')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const target = segments[sectionKey];
+  if (target === undefined) return raw;
+  const colonIndex = target.indexOf(':');
+  if (colonIndex === -1) return raw;
+  const name = target.slice(0, colonIndex).trim();
+  const newChordsPart = replaceNthParsedToken(target.slice(colonIndex + 1), chordIndex, newToken);
+  segments[sectionKey] = `${name}: ${newChordsPart}`;
+  return `${segments.join('; ')};`;
+}
+
 @Component({
   selector: 'app-backing-track',
-  imports: [],
+  imports: [ModalInterchange],
   templateUrl: './backing-track.html',
   styleUrl: './backing-track.scss',
 })
@@ -116,6 +158,11 @@ export class BackingTrack implements OnDestroy {
   // manual edit afterward doesn't keep re-imposing old saved beats/order.
   readonly initialState = input<BackingTrackInitialState | null>(null);
   private appliedInitialState: BackingTrackInitialState | null = null;
+
+  // Emits the full progression text after a modal-interchange swap edits one
+  // chord — the parent owns the canonical text (Chord Finder's own query
+  // signal), this component only derives sections/timeline from it.
+  readonly progressionEdited = output<string>();
 
   readonly isPlaying = this.tempo.isPlaying;
   readonly enabled = signal(false);
@@ -312,6 +359,40 @@ export class BackingTrack implements OnDestroy {
 
   private totalBeatsFor(section: SongSection): number {
     return this.timelineFor(section).reduce((sum, e) => sum + e.beats, 0);
+  }
+
+  // Modal interchange — scoped per section (each section can sit in its own
+  // key), so the trigger lives on that section's row rather than globally.
+  readonly interchangeSectionKey = signal<number | null>(null);
+
+  readonly interchangeSection = computed(() => {
+    const key = this.interchangeSectionKey();
+    return key === null ? null : (this.sectionByKey(key) ?? null);
+  });
+
+  readonly interchangeEntries = computed(() => {
+    const section = this.interchangeSection();
+    return section ? this.timelineFor(section) : [];
+  });
+
+  readonly interchangeKey = computed<Key | null>(() => {
+    const section = this.interchangeSection();
+    return section ? detectKey(section.chords.map((c) => c.raw)) : null;
+  });
+
+  openInterchange(sectionKey: number): void {
+    this.interchangeSectionKey.set(sectionKey);
+  }
+
+  closeInterchange(): void {
+    this.interchangeSectionKey.set(null);
+  }
+
+  applyInterchangeSwap(event: { chordIndex: number; root: Note; quality: TriadQuality }): void {
+    const sectionKey = this.interchangeSectionKey();
+    if (sectionKey === null) return;
+    const newToken = chordLabel(event.root, event.quality);
+    this.progressionEdited.emit(applyChordSwap(this.progression(), sectionKey, event.chordIndex, newToken));
   }
 
   toggle(): void {

@@ -137,6 +137,15 @@
               </div>
             }
           </div>
+          <button
+            type="button"
+            class="backing-track-interchange"
+            [attr.aria-label]="text().backingTrack.interchangeTrigger + (section.name ? ': ' + section.name : '')"
+            (click)="openInterchange(section.key)"
+          >
+            <span aria-hidden="true">⇄</span>
+            {{ text().backingTrack.interchangeTrigger }}
+          </button>
           @if (isSongMode()) {
             <div class="backing-track-repeat">
               <button
@@ -177,5 +186,14 @@
         }
       }
     </div>
+  }
+
+  @if (interchangeSection(); as section) {
+    <app-modal-interchange
+      [entries]="interchangeEntries()"
+      [detectedKey]="interchangeKey()"
+      (closed)="closeInterchange()"
+      (swap)="applyInterchangeSwap($event)"
+    />
   }
 </div>

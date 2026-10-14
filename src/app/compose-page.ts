@@ -246,6 +246,15 @@ export class ComposePage {
     }).format(Date.now());
   }
 
+  // A modal-interchange swap inside the backing track rewrites the progression
+  // text directly — same path a saved session uses to restore Chord Finder's query.
+  onProgressionEdited(newText: string): void {
+    const chordFinder = this.chordFinder();
+    if (!chordFinder) return;
+    chordFinder.query.set(newText);
+    chordFinder.runSearch();
+  }
+
   setTab(tab: ComposeTab): void {
     this.activeTab.set(tab);
     this.seedFromRhythm(tab);

@@ -77,9 +77,14 @@ export class ModalInterchange implements OnDestroy {
   // the user can A/B it against whatever they've changed so far without
   // losing the "before" picture.
   readonly originalEntries = signal<TimelineSlot[] | null>(null);
-  // chordIndex of whichever chord is sounding right now during a full-sequence
-  // playback (either row) — drives the pulse on both the live and original chips.
+  // chordIndex + which row's own full-sequence playback is sounding right
+  // now — kept as two separate signals rather than one combined value so a
+  // chip can check "is it me" with a plain equality, no destructuring in
+  // the template. Only the row that's actually playing pulses; the other
+  // row stays still instead of both lighting up together, which read as
+  // confusing (they can show different chords at the same position).
   readonly playingIndex = signal<number | null>(null);
+  readonly playingSource = signal<'live' | 'original' | null>(null);
 
   // "Do mayor · modo Jónico de Do" — the detected key framed as the common
   // parallel tonic every row of the matrix borrows against (diatonicChords
@@ -281,6 +286,7 @@ export class ModalInterchange implements OnDestroy {
     for (const id of this.pulseTimeouts) clearTimeout(id);
     this.pulseTimeouts.clear();
     this.playingIndex.set(null);
+    this.playingSource.set(null);
   }
 
   // Plays a full progression once, back to back — a quick "how does the
@@ -291,13 +297,14 @@ export class ModalInterchange implements OnDestroy {
   // backing-track.ts's own beat pulse uses — scheduling the *visual* flip
   // against wall-clock time since Web Audio's own scheduling doesn't fire
   // DOM callbacks.
-  private async playEntries(list: TimelineSlot[]): Promise<void> {
+  private async playEntries(list: TimelineSlot[], source: 'live' | 'original'): Promise<void> {
     if (!list.length) return;
     const instrument = await this.ensureInstrument();
     const ctx = this.tempo.audioContext;
     const velocity = Math.round(100 * this.volume());
     const STEP = 0.62; // seconds between chord onsets
     this.clearPulse();
+    this.playingSource.set(source);
     list.forEach((entry, i) => {
       const tones = buildChordTones(entry.chord.root, entry.chord.quality);
       const midiNotes = voiceTriadMidi(tones, entry.chord.root);
@@ -320,12 +327,12 @@ export class ModalInterchange implements OnDestroy {
   }
 
   playSequence(): void {
-    void this.playEntries(this.entries());
+    void this.playEntries(this.entries(), 'live');
   }
 
   playOriginal(): void {
     const original = this.originalEntries();
-    if (original) void this.playEntries(original);
+    if (original) void this.playEntries(original, 'original');
   }
 
   chipDegreeLabel(chip: ProgressionChip): string | null {

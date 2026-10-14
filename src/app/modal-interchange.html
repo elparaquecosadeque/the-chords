@@ -51,7 +51,7 @@
               class="interchange-chip"
               [class.selected]="selectedChordIndex() === chip.chordIndex"
               [class.chromatic]="chip.degree === null"
-              [class.playing]="playingIndex() === chip.chordIndex"
+              [class.playing]="playingSource() === 'live' && playingIndex() === chip.chordIndex"
               [attr.title]="chip.degree === null ? text().modalInterchange.chromaticNote : null"
               (click)="onChipClick(chip)"
               (mouseenter)="previewChip(chip)"
@@ -70,7 +70,7 @@
             <span class="interchange-original-label">{{ text().modalInterchange.originalLabel }}</span>
             <div class="interchange-chips interchange-chips-original">
               @for (chip of originalChips(); track chip.chordIndex) {
-                <span class="interchange-chip interchange-chip-static" [class.playing]="playingIndex() === chip.chordIndex">
+                <span class="interchange-chip interchange-chip-static" [class.playing]="playingSource() === 'original' && playingIndex() === chip.chordIndex">
                   {{ chip.label }}
                 </span>
               }

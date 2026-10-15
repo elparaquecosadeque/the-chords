@@ -66,9 +66,12 @@
   />
 
   <div class="compose-panel" [hidden]="activeTab() !== 'rhythm'">
-    <div class="rhythm-layout">
-      <the-chords-chord-finder [language]="preferences.language()" />
-      <div class="rhythm-circle-preview-wrap" [class.expanded]="preferences.showRhythmCirclePreview()">
+    <the-chords-chord-finder [language]="preferences.language()">
+      <div
+        chord-finder-extra
+        class="rhythm-circle-preview-wrap"
+        [class.expanded]="preferences.showRhythmCirclePreview()"
+      >
         <button
           type="button"
           role="switch"
@@ -94,7 +97,7 @@
           </p>
         }
       </div>
-    </div>
+    </the-chords-chord-finder>
   </div>
   <div class="compose-panel" [hidden]="activeTab() !== 'theory'">
     <the-chords-circle-of-fifths [language]="preferences.language()" />

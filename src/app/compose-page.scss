@@ -202,32 +202,6 @@
   }
 }
 
-.rhythm-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  gap: 20px;
-
-  @media (min-width: 900px) {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-}
-
-// Chord Finder has no width ceiling of its own — add enough chords and its
-// results-row keeps growing sideways instead of wrapping, which can
-// eventually outgrow the row and knock the circle preview onto its own
-// line, far below .hero-card instead of staying docked beside it.
-// flex-grow claims exactly the space left over after the circle preview's
-// own fixed width, so Chord Finder uses all the room it actually has
-// instead of an arbitrary fixed cap — it only wraps internally (or, in a
-// genuinely narrow row, falls below like any other flex item) once there
-// truly isn't enough width left, not before.
-.rhythm-layout > the-chords-chord-finder {
-  flex: 1 1 480px;
-  min-width: 0;
-}
-
 .rhythm-circle-preview-toggle {
   display: inline-flex;
   align-items: center;
@@ -255,9 +229,12 @@
 }
 
 .rhythm-circle-preview-wrap {
+  // Projected into Chord Finder's own results-row (chord-finder-extra slot)
+  // so it shares one flex-wrap context with the result cards and one
+  // background with the rest of the card — no more separate column, no
+  // seam, and result cards can flow into the space below it.
   position: sticky;
   top: 96px; // clears the sticky .topbar (76px) plus a little breathing room
-  margin-top: 5vh;
   display: flex;
   flex-direction: column;
   gap: 8px;

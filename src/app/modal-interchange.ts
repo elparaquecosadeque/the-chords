@@ -4,6 +4,7 @@ import { SplendidGrandPiano, type Smplr } from 'smplr';
 
 import type { TimelineSlot } from './backing-track';
 import { LocalizationService } from './localization.service';
+import { PreferencesService } from './preferences.service';
 import { TempoService } from './tempo.service';
 import {
   DEGREE_ROLES,
@@ -56,6 +57,7 @@ function voiceTriadMidi(tones: readonly Note[], root: Note): number[] {
 })
 export class ModalInterchange implements OnDestroy {
   private readonly localization = inject(LocalizationService);
+  private readonly preferences = inject(PreferencesService);
   private readonly tempo = inject(TempoService);
   private readonly closeButton = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
   readonly text = this.localization.languageDictionary;
@@ -70,7 +72,7 @@ export class ModalInterchange implements OnDestroy {
   readonly tierOrder: readonly Tier[] = ['safe', 'caution', 'risky'];
   readonly selectedChordIndex = signal<number | null>(null);
   readonly volume = signal(0.7); // 0-1, drives both the full-sequence playback and every per-chord preview
-  readonly hoverPreviewEnabled = signal(true); // off: hover goes silent, click previews instead
+  readonly hoverPreviewEnabled = this.preferences.interchangeHoverPreview; // off: hover goes silent, click previews instead. Persisted (see PreferencesService).
   readonly hoverCompare = signal<HoverCompare | null>(null);
   // Snapshot of the progression as it stood when the modal opened — captured
   // once (swaps mutate the live `entries` via the parent, never this), so

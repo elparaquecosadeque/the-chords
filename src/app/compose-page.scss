@@ -229,12 +229,10 @@
 }
 
 .rhythm-circle-preview-wrap {
-  // Projected into Chord Finder's own results-row (chord-finder-extra slot)
-  // so it shares one flex-wrap context with the result cards and one
-  // background with the rest of the card — no more separate column, no
-  // seam, and result cards can flow into the space below it.
-  position: sticky;
-  top: 96px; // clears the sticky .topbar (76px) plus a little breathing room
+  // Projected into Chord Finder's own hero-row (chord-finder-extra slot),
+  // beside .hero-card instead of down with the results — same background,
+  // no seam. Not sticky: that pinned it in place while scrolled-past result
+  // cards kept rendering underneath/through it.
   display: flex;
   flex-direction: column;
   gap: 8px;

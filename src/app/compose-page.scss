@@ -110,7 +110,6 @@
 .compose-panel {
   border: 1px solid var(--chords-border);
   border-radius: 16px;
-  overflow: hidden;
   // Chord Finder brings its own glow, but it only paints as far as its own
   // content — any leftover space in this panel (a shorter sibling, like the
   // circle preview, next to a long results list) fell back to flat
@@ -256,6 +255,8 @@
 }
 
 .rhythm-circle-preview-wrap {
+  position: sticky;
+  top: 96px; // clears the sticky .topbar (76px) plus a little breathing room
   margin-top: 5vh;
   display: flex;
   flex-direction: column;

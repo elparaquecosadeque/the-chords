@@ -388,11 +388,18 @@ export class BackingTrack implements OnDestroy {
     this.interchangeSectionKey.set(null);
   }
 
-  applyInterchangeSwap(event: { chordIndex: number; root: Note; quality: TriadQuality }): void {
+  // Applies every staged swap from one confirmed modal-interchange session in
+  // a single pass over local text, not the `progression` signal — chaining
+  // through the signal between swaps would have each one read the previous
+  // swap's stale, not-yet-propagated value.
+  applyInterchangeConfirm(swaps: { chordIndex: number; root: Note; quality: TriadQuality }[]): void {
     const sectionKey = this.interchangeSectionKey();
-    if (sectionKey === null) return;
-    const newToken = chordLabel(event.root, event.quality);
-    this.progressionEdited.emit(applyChordSwap(this.progression(), sectionKey, event.chordIndex, newToken));
+    if (sectionKey === null || swaps.length === 0) return;
+    let raw = this.progression();
+    for (const swap of swaps) {
+      raw = applyChordSwap(raw, sectionKey, swap.chordIndex, chordLabel(swap.root, swap.quality));
+    }
+    this.progressionEdited.emit(raw);
   }
 
   toggle(): void {

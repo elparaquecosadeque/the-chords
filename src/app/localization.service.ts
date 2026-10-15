@@ -112,6 +112,9 @@ export class LocalizationService {
                     originalLabel: 'Progresión original',
                     volumeLabel: 'Volumen de reproducción',
                     hoverPreviewLabel: 'Sonido al pasar el cursor',
+                    confirmChanges: 'Confirmar cambios',
+                    undoChanges: 'Deshacer cambios',
+                    discardHint: 'Se pierden si cierras sin confirmar.',
                     tierLabels: { same: 'Igual al original', safe: 'Recomendado', caution: 'Con intención', risky: 'Rompe el reposo' },
                     roleNames: {
                         tonic: 'Tónica',
@@ -252,6 +255,9 @@ export class LocalizationService {
                     originalLabel: 'Original progression',
                     volumeLabel: 'Playback volume',
                     hoverPreviewLabel: 'Sound on hover',
+                    confirmChanges: 'Confirm changes',
+                    undoChanges: 'Undo changes',
+                    discardHint: 'Lost if you close without confirming.',
                     tierLabels: { same: 'Same as original', safe: 'Recommended', caution: 'With intention', risky: 'Breaks the rest' },
                     roleNames: {
                         tonic: 'Tonic',

@@ -79,6 +79,15 @@
               ▶ {{ text().modalInterchange.playOriginal }}
             </button>
           </div>
+          <div class="interchange-commit-row">
+            <button type="button" class="interchange-undo" (click)="undoChanges()">
+              ↺ {{ text().modalInterchange.undoChanges }}
+            </button>
+            <span class="interchange-commit-hint">{{ text().modalInterchange.discardHint }}</span>
+            <button type="button" class="interchange-confirm" (click)="confirmChanges()">
+              ✓ {{ text().modalInterchange.confirmChanges }}
+            </button>
+          </div>
         }
       </section>
 

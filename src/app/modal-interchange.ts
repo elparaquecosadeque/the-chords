@@ -1,5 +1,5 @@
 import { Component, ElementRef, HostListener, OnDestroy, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
-import { buildChordTones, noteName, type Key, type Note } from '@gblp/music-theory';
+import { buildChordTones, noteName, type Key, type Note, type ParsedChord } from '@gblp/music-theory';
 import { SplendidGrandPiano, type Smplr } from 'smplr';
 
 import type { TimelineSlot } from './backing-track';
@@ -65,7 +65,10 @@ export class ModalInterchange implements OnDestroy {
   readonly entries = input<TimelineSlot[]>([]);
   readonly detectedKey = input<Key | null>(null);
   readonly closed = output<void>();
-  readonly swap = output<{ chordIndex: number; root: Note; quality: TriadQuality }>();
+  // Emitted only on confirmChanges() — every swap made this session, applied
+  // to the real progression in one batch. Closing any other way (✕, Escape,
+  // backdrop) never emits this, so the default is to discard.
+  readonly confirmed = output<{ chordIndex: number; root: Note; quality: TriadQuality }[]>();
 
   readonly modes = PARALLEL_MODES;
   readonly degrees = [0, 1, 2, 3, 4, 5, 6] as const;
@@ -79,6 +82,10 @@ export class ModalInterchange implements OnDestroy {
   // the user can A/B it against whatever they've changed so far without
   // losing the "before" picture.
   readonly originalEntries = signal<TimelineSlot[] | null>(null);
+  // The staged copy every swap edits — never written back to the real
+  // progression until confirmChanges(). Seeded alongside originalEntries so
+  // the two start identical; undoChanges() resets this to that snapshot.
+  readonly workingEntries = signal<TimelineSlot[] | null>(null);
   // chordIndex + which row's own full-sequence playback is sounding right
   // now — kept as two separate signals rather than one combined value so a
   // chip can check "is it me" with a plain equality, no destructuring in
@@ -104,7 +111,8 @@ export class ModalInterchange implements OnDestroy {
 
   readonly chips = computed<ProgressionChip[]>(() => {
     const key = this.detectedKey();
-    return this.entries().map((entry) => ({
+    const list = this.workingEntries() ?? this.entries();
+    return list.map((entry) => ({
       chordIndex: entry.index,
       label: entry.chord.raw,
       root: entry.chord.root,
@@ -133,8 +141,9 @@ export class ModalInterchange implements OnDestroy {
   // there's actually something to compare.
   readonly hasChanges = computed(() => {
     const original = this.originalEntries();
-    if (!original) return false;
-    return this.entries().some((entry) => {
+    const working = this.workingEntries();
+    if (!original || !working) return false;
+    return working.some((entry) => {
       const before = original.find((o) => o.index === entry.index);
       return before && (before.chord.root !== entry.chord.root || before.chord.quality !== entry.chord.quality);
     });
@@ -199,6 +208,7 @@ export class ModalInterchange implements OnDestroy {
       const list = this.entries();
       if (list.length > 0 && this.originalEntries() === null) {
         this.originalEntries.set([...list]);
+        this.workingEntries.set([...list]);
       }
     });
   }
@@ -227,8 +237,40 @@ export class ModalInterchange implements OnDestroy {
     if (cell.tier === 'same') return;
     const chip = this.selectedChip();
     if (!chip || chip.degree !== degree) return;
-    this.swap.emit({ chordIndex: chip.chordIndex, root: cell.root, quality: cell.quality });
+    const chord: ParsedChord = { raw: chordLabel(cell.root, cell.quality), root: cell.root, quality: cell.quality };
+    this.workingEntries.update((list) =>
+      (list ?? []).map((entry) => (entry.index === chip.chordIndex ? { ...entry, chord } : entry)),
+    );
     this.hoverCompare.set(null);
+  }
+
+  // Resets every staged swap back to how the progression stood when the
+  // modal opened — lets the user start over without closing and reopening.
+  undoChanges(): void {
+    const original = this.originalEntries();
+    if (!original) return;
+    this.workingEntries.set(original.map((entry) => ({ ...entry, chord: { ...entry.chord } })));
+    this.hoverCompare.set(null);
+  }
+
+  // The only path that writes staged swaps back to the real progression —
+  // closing any other way discards them.
+  confirmChanges(): void {
+    const original = this.originalEntries();
+    const working = this.workingEntries();
+    if (!original || !working) return;
+    const swaps = working.flatMap((entry) => {
+      const before = original.find((o) => o.index === entry.index);
+      if (!before || (before.chord.root === entry.chord.root && before.chord.quality === entry.chord.quality)) {
+        return [];
+      }
+      // Only plain triad qualities ever reach workingEntries via applyCell,
+      // so this cast just reflects what's already guaranteed at the source.
+      return [{ chordIndex: entry.index, root: entry.chord.root, quality: entry.chord.quality as TriadQuality }];
+    });
+    if (swaps.length === 0) return;
+    this.confirmed.emit(swaps);
+    this.close();
   }
 
   // With hover-preview off, a cell's sound only happens on click — same
@@ -329,7 +371,7 @@ export class ModalInterchange implements OnDestroy {
   }
 
   playSequence(): void {
-    void this.playEntries(this.entries(), 'live');
+    void this.playEntries(this.workingEntries() ?? this.entries(), 'live');
   }
 
   playOriginal(): void {

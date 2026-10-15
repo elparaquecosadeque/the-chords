@@ -298,6 +298,69 @@
   font-size: 0.68rem;
 }
 
+.interchange-commit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--chords-border);
+}
+
+.interchange-commit-hint {
+  color: var(--chords-muted);
+  font-size: 0.68rem;
+  font-style: italic;
+}
+
+.interchange-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  color: var(--chords-muted);
+  background: transparent;
+  border: 1px solid var(--chords-border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--chords-text);
+    border-color: var(--chords-danger);
+    outline: none;
+  }
+}
+
+.interchange-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 6px 16px;
+  color: var(--chords-on-primary);
+  background: var(--chords-primary);
+  border: 1px solid var(--chords-primary);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 150ms ease;
+
+  &:hover,
+  &:focus-visible {
+    filter: brightness(1.1);
+    outline: none;
+  }
+}
+
 .interchange-empty,
 .interchange-hint {
   margin: 0;

@@ -110,8 +110,24 @@
 .compose-panel {
   border: 1px solid var(--chords-border);
   border-radius: 16px;
-  overflow: hidden;
-  background: var(--chords-surface);
+  // Chord Finder brings its own glow, but it only paints as far as its own
+  // content — any leftover space in this panel (a shorter sibling, like the
+  // circle preview, next to a long results list) fell back to flat
+  // --chords-surface black with no glow at all, reading as an unstyled
+  // seam next to the rest of the neon theme. Echoing the same two-tone
+  // glow here means that leftover space still looks like part of the app.
+  background:
+    radial-gradient(
+      circle at 6% 8%,
+      color-mix(in srgb, var(--chords-primary) 14%, transparent),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 96% 4%,
+      color-mix(in srgb, var(--chords-secondary) 14%, transparent),
+      transparent 26%
+    ),
+    var(--chords-surface);
 }
 
 .save-session-row {
@@ -186,18 +202,6 @@
   }
 }
 
-.rhythm-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  gap: 20px;
-
-  @media (min-width: 900px) {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-}
-
 .rhythm-circle-preview-toggle {
   display: inline-flex;
   align-items: center;
@@ -225,7 +229,10 @@
 }
 
 .rhythm-circle-preview-wrap {
-  margin-top: 5vh;
+  // Projected into Chord Finder's own hero-row (chord-finder-extra slot),
+  // beside .hero-card instead of down with the results — same background,
+  // no seam. Not sticky: that pinned it in place while scrolled-past result
+  // cards kept rendering underneath/through it.
   display: flex;
   flex-direction: column;
   gap: 8px;

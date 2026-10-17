@@ -46,6 +46,25 @@ export class App {
   readonly infoOpen = signal(false);
   readonly sessionsOpen = signal(false);
 
+  // Mobile-only topbar collapse state — both ignored by desktop CSS, where
+  // the nav and preferences stay permanently expanded regardless.
+  readonly mobileNavOpen = signal(false);
+  readonly mobileSettingsOpen = signal(false);
+
+  // The label shown on the collapsed mobile tool switcher, next to "The
+  // Chords" — mirrors whichever nav link's routerLinkActive is lit.
+  readonly activeToolLabel = computed(() => {
+    const t = this.languageLocalization();
+    const labels: Record<string, string> = {
+      'chord-finder': t.chordFinder,
+      'circle-of-fifths': t.circleOfFifths,
+      'bass-notes': t.bassNotes,
+      soloin: t.soloin,
+      compose: t.compose,
+    };
+    return labels[this.activeRouteKey()] ?? t.chordFinder;
+  });
+
   constructor() {
     effect(() => (this.document.documentElement.lang = this.preferences.language()));
     // Mirrors .shell's [data-theme] onto <html> so global (non-component-scoped)
@@ -64,5 +83,15 @@ export class App {
 
   toggleLanguage(): void {
     this.preferences.language.update((language) => (language === 'en' ? 'es' : 'en'));
+  }
+
+  toggleMobileNav(): void {
+    this.mobileSettingsOpen.set(false);
+    this.mobileNavOpen.update((open) => !open);
+  }
+
+  toggleMobileSettings(): void {
+    this.mobileNavOpen.set(false);
+    this.mobileSettingsOpen.update((open) => !open);
   }
 }

@@ -1,53 +1,83 @@
 <div class="shell" [attr.data-theme]="preferences.theme()">
   <header class="topbar">
-    <nav class="tool-nav" [attr.aria-label]="languageLocalization().navLabel">
-      <a routerLink="/chord-finder" routerLinkActive="active" ariaCurrentWhenActive="page">
+    <div class="topbar-head">
+      <a class="brand" routerLink="/chord-finder" [attr.aria-label]="languageLocalization().homeLabel">
+        The Chords
+      </a>
+      <button
+        type="button"
+        class="mobile-tool-toggle"
+        [attr.aria-expanded]="mobileNavOpen()"
+        aria-controls="toolNav"
+        (click)="toggleMobileNav()"
+      >
+        <span>{{ activeToolLabel() }}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <nav id="toolNav" class="tool-nav" [class.mobile-open]="mobileNavOpen()" [attr.aria-label]="languageLocalization().navLabel">
+      <a routerLink="/chord-finder" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="mobileNavOpen.set(false)">
         {{ languageLocalization().chordFinder }}
       </a>
-      <a routerLink="/circle-of-fifths" routerLinkActive="active" ariaCurrentWhenActive="page">
+      <a routerLink="/circle-of-fifths" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="mobileNavOpen.set(false)">
         {{ languageLocalization().circleOfFifths }}
       </a>
-      <a routerLink="/bass-notes" routerLinkActive="active" ariaCurrentWhenActive="page">
+      <a routerLink="/bass-notes" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="mobileNavOpen.set(false)">
         {{ languageLocalization().bassNotes }}
       </a>
-      <a routerLink="/soloin" routerLinkActive="active" ariaCurrentWhenActive="page">
+      <a routerLink="/soloin" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="mobileNavOpen.set(false)">
         {{ languageLocalization().soloin }}
       </a>
-      <a routerLink="/compose" routerLinkActive="active" ariaCurrentWhenActive="page">
+      <a routerLink="/compose" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="mobileNavOpen.set(false)">
         {{ languageLocalization().compose }}
       </a>
     </nav>
 
-    <a class="brand" routerLink="/chord-finder" [attr.aria-label]="languageLocalization().homeLabel">
-      The Chords
-    </a>
-
     <div class="preferences">
       <app-metronome />
-      <button type="button" role="switch" [attr.aria-checked]="preferences.theme() === 'dark'"
-        [attr.aria-label]="preferences.theme() === 'dark' ? languageLocalization().darkTheme : languageLocalization().lightTheme"
-        (click)="toggleTheme()">
-        <span aria-hidden="true">{{ preferences.theme() === 'dark' ? '☾' : '☀' }}</span>
-        {{ preferences.theme() === 'dark' ? languageLocalization().darkTheme : languageLocalization().lightTheme }}
-      </button>
-      <button type="button" role="switch" [attr.aria-checked]="preferences.language() === 'es'"
-        [attr.aria-label]="languageLocalization().language" (click)="toggleLanguage()">
-        {{ preferences.language() | uppercase }}
-      </button>
-      <button type="button" class="sessions-trigger" [attr.aria-label]="languageLocalization().sessions.triggerLabel"
-        (click)="sessionsOpen.set(true)">
+      <button
+        type="button"
+        class="mobile-settings-toggle"
+        [attr.aria-expanded]="mobileSettingsOpen()"
+        aria-controls="preferencesExtra"
+        [attr.aria-label]="languageLocalization().infoModal.buttonLabel"
+        (click)="toggleMobileSettings()"
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+          <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+          <circle cx="19" cy="12" r="1.6" fill="currentColor" />
         </svg>
       </button>
-      <button type="button" class="info-trigger" [attr.aria-label]="languageLocalization().infoModal.buttonLabel"
-        (click)="infoOpen.set(true)">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
-          <circle cx="12" cy="7.75" r="1.15" fill="currentColor" />
-          <path d="M12 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-      </button>
+      <div id="preferencesExtra" class="preferences-extra" [class.mobile-open]="mobileSettingsOpen()">
+        <button type="button" role="switch" [attr.aria-checked]="preferences.theme() === 'dark'"
+          [attr.aria-label]="preferences.theme() === 'dark' ? languageLocalization().darkTheme : languageLocalization().lightTheme"
+          (click)="toggleTheme()">
+          <span aria-hidden="true">{{ preferences.theme() === 'dark' ? '☾' : '☀' }}</span>
+          {{ preferences.theme() === 'dark' ? languageLocalization().darkTheme : languageLocalization().lightTheme }}
+        </button>
+        <button type="button" role="switch" [attr.aria-checked]="preferences.language() === 'es'"
+          [attr.aria-label]="languageLocalization().language" (click)="toggleLanguage()">
+          {{ preferences.language() | uppercase }}
+        </button>
+        <button type="button" class="sessions-trigger" [attr.aria-label]="languageLocalization().sessions.triggerLabel"
+          (click)="sessionsOpen.set(true)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button type="button" class="info-trigger" [attr.aria-label]="languageLocalization().infoModal.buttonLabel"
+          (click)="infoOpen.set(true)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="12" cy="7.75" r="1.15" fill="currentColor" />
+            <path d="M12 11v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
     </div>
   </header>
 

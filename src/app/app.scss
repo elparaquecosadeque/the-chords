@@ -64,6 +64,7 @@
   top: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas: 'nav brand prefs';
   align-items: center;
   gap: 24px;
   min-height: 76px;
@@ -75,7 +76,15 @@
   backdrop-filter: blur(12px);
 }
 
+// Wraps .brand so the mobile layout can pair it with .mobile-tool-toggle on
+// one row; display:contents on desktop keeps .brand acting as a direct grid
+// child (grid-area below), so this wrapper changes nothing there.
+.topbar-head {
+  display: contents;
+}
+
 .brand {
+  grid-area: brand;
   color: inherit;
   font-size: clamp(1.35rem, 3vw, 2rem);
   font-weight: 850;
@@ -84,7 +93,16 @@
   white-space: nowrap;
 }
 
+// Mobile-only collapsed tool switcher ("Buscador de acordes ⌄" next to the
+// wordmark) and settings overflow (⋯) — hidden on desktop, where the real
+// nav and preferences stay permanently expanded instead.
+.mobile-tool-toggle,
+.mobile-settings-toggle {
+  display: none;
+}
+
 .tool-nav {
+  grid-area: nav;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -118,10 +136,18 @@
 }
 
 .preferences {
+  grid-area: prefs;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+// On desktop this wrapper disappears (display:contents) so its buttons flow
+// inline with .preferences' other children exactly as before; on mobile it
+// becomes the collapsible panel toggled by .mobile-settings-toggle.
+.preferences-extra {
+  display: contents;
 }
 
 .preferences button {
@@ -220,22 +246,103 @@
 }
 
 @media (max-width: 760px) {
+  // Replaces the 3-stacked-rows layout (wordmark, 5 nav pills, prefs row)
+  // with: wordmark + collapsed tool switcher on one line, the nav itself
+  // collapsed into a dropdown under it, and the metronome transport always
+  // visible with the rest of the prefs collapsed behind an overflow button.
   .topbar {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     gap: 10px;
   }
 
-  .brand {
-    grid-row: 1;
+  .topbar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .mobile-tool-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 65%;
+    padding: 8px 8px 8px 14px;
+    color: var(--chords-on-primary);
+    background: var(--chords-primary);
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .mobile-tool-toggle span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-tool-toggle svg {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
+    transition: transform 160ms ease;
+  }
+
+  .mobile-tool-toggle[aria-expanded='true'] svg {
+    transform: rotate(180deg);
   }
 
   .tool-nav {
-    grid-row: 2;
+    display: none;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .tool-nav.mobile-open {
+    display: flex;
+  }
+
+  .tool-nav a {
+    text-align: left;
   }
 
   .preferences {
-    grid-row: 3;
+    align-items: center;
     justify-content: flex-start;
+    width: 100%;
+  }
+
+  .mobile-settings-toggle {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    color: var(--chords-text);
+    background: var(--chords-surface);
+    border: 1px solid var(--chords-border);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .mobile-settings-toggle svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .preferences-extra {
+    display: none;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .preferences-extra.mobile-open {
+    display: flex;
   }
 
   .site-footer {

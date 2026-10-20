@@ -60,6 +60,7 @@ export class App {
       'circle-of-fifths': t.circleOfFifths,
       'bass-notes': t.bassNotes,
       soloin: t.soloin,
+      'count-in': t.countIn,
       compose: t.compose,
     };
     return labels[this.activeRouteKey()] ?? t.chordFinder;

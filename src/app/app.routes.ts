@@ -30,6 +30,12 @@ export const routes: Routes = [
     loadComponent: () => import('./soloin-page').then(({ SoloinPage }) => SoloinPage),
   },
   {
+    path: 'count-in',
+    title: 'Count-In | The Chords',
+    loadComponent: () =>
+      import('./count-in-practice-page').then(({ CountInPracticePage }) => CountInPracticePage),
+  },
+  {
     path: 'compose',
     title: 'Compose | The Chords',
     loadComponent: () => import('./compose-page').then(({ ComposePage }) => ComposePage),

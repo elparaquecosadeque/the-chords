@@ -5,7 +5,7 @@ import { PreferencesService } from './preferences.service';
 
 @Component({
   imports: [CountInPractice],
-  template: `<the-chords-count-in-practice [language]="preferences.language()" />`,
+  template: `<the-chords-count-in-practice [language]="preferences.language()" [theme]="preferences.theme()" />`,
 })
 export class CountInPracticePage {
   readonly preferences = inject(PreferencesService);

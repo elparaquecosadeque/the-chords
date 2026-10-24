@@ -14,6 +14,7 @@ export class LocalizationService {
                 circleOfFifths: 'Círculo de quintas',
                 bassNotes: 'Notas de bajo',
                 soloin: 'Soloin',
+                countIn: 'Count-In',
                 compose: 'Componer',
                 composePage: {
                     title: 'Componer',
@@ -157,6 +158,7 @@ export class LocalizationService {
                 circleOfFifths: 'Circle of Fifths',
                 bassNotes: 'Bass Notes',
                 soloin: 'Soloin',
+                countIn: 'Count-In',
                 compose: 'Compose',
                 composePage: {
                     title: 'Compose',

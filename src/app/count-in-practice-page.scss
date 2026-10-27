@@ -45,12 +45,24 @@ the-chords-count-in-practice ::ng-deep .shell {
       transform: rotate(180deg);
     }
   }
+
+  // Collapsed: a one-line chip at the top of its column.
+  &:not([open]) {
+    justify-self: start;
+    max-width: 100%;
+    padding: 0 12px 0 16px;
+    border-radius: 999px;
+
+    summary {
+      min-height: 40px;
+    }
+  }
 }
 
 summary {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   min-height: 48px;
   color: var(--chords-text);
   font-weight: 700;
@@ -68,8 +80,10 @@ summary {
   }
 
   svg {
+    flex: none;
     width: 20px;
     height: 20px;
+    margin-left: auto;
     fill: none;
     stroke: currentColor;
     stroke-width: 2.4;
@@ -77,6 +91,20 @@ summary {
     stroke-linejoin: round;
     transition: transform 0.15s ease-out;
   }
+}
+
+.chords-title {
+  flex: none;
+}
+
+.chords-summary {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--chords-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 @media (prefers-reduced-motion: reduce) {

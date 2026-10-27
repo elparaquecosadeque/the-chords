@@ -25,7 +25,8 @@ function write(key: string, value: string): void {
 }
 
 // Count-In with the chords being practiced beside it (below, on narrow
-// screens). The panel collapses for when only the loop matters.
+// screens). The panel collapses to a one-line chip for when only the loop
+// matters, still naming the chords.
 @Component({
   imports: [CountInPractice, ChordFinderComponent],
   template: `
@@ -40,7 +41,10 @@ function write(key: string, value: string): void {
 
         <details class="chords-panel" [open]="chordsOpen()" (toggle)="onToggle($event)">
           <summary>
-            {{ text().chords }}
+            <span class="chords-title">{{ text().chords }}</span>
+            @if (!chordsOpen()) {
+              <span class="chords-summary">{{ chordsSummary() }}</span>
+            }
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
           </summary>
           <the-chords-chord-finder compact [language]="preferences.language()" [(query)]="chords" />
@@ -57,6 +61,21 @@ export class CountInPracticePage {
 
   readonly chords = signal(read(CHORDS_KEY) ?? 'C, G, Am, F');
   readonly chordsOpen = signal(read(CHORDS_OPEN_KEY) !== 'false');
+  // "verse: C, G; chorus: Am" → "C · G / Am"
+  readonly chordsSummary = computed(() =>
+    this.chords()
+      .split(';')
+      .map((section) =>
+        section
+          .replace(/^[^:]*:/, '')
+          .split(',')
+          .map((chord) => chord.trim())
+          .filter(Boolean)
+          .join(' · '),
+      )
+      .filter(Boolean)
+      .join(' / '),
+  );
 
   constructor() {
     effect(() => write(CHORDS_KEY, this.chords()));

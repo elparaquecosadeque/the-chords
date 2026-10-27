@@ -1,15 +1,31 @@
 import { DOCUMENT, UpperCasePipe } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  Injector,
+  ViewContainerRef,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  inputBinding,
+  outputBinding,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import type { CountInEngineService, CountInStore } from '@gblp/count-in-practice';
 import { filter, map } from 'rxjs';
 
 import type { ComposeTab } from './compose-page';
+import { markCountInHostReady } from './count-in-session';
 import { InfoModal } from './info-modal';
 import { LocalizationService } from './localization.service';
 import { Metronome } from './metronome';
 import { PreferencesService } from './preferences.service';
 import { SessionsPanel } from './sessions-panel';
+import { TempoService } from './tempo.service';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +35,12 @@ import { SessionsPanel } from './sessions-panel';
 })
 export class App {
   private readonly document = inject(DOCUMENT);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
+  private readonly injector = inject(Injector);
+  private readonly tempo = inject(TempoService);
+  // Null until the Count-In lib has loaded (see loadCountIn).
+  readonly countInEngine = signal<CountInEngineService | null>(null);
+  private readonly countInHostOutlet = viewChild.required('countInHost', { read: ViewContainerRef });
   readonly preferences = inject(PreferencesService);
   readonly localization = inject(LocalizationService);
   readonly languageLocalization = this.localization.languageDictionary;
@@ -72,6 +93,56 @@ export class App {
     // CSS — like the driver.js walkthrough theming in styles.scss — can react to
     // the theme too, since driver.js appends its popover as a sibling of <app-root>.
     effect(() => (this.document.documentElement.dataset['theme'] = this.preferences.theme()));
+    afterNextRender(() => this.loadCountIn());
+  }
+
+  // Count-In keeps playing across routes, so its YouTube host lives in the
+  // shell. Imported dynamically: a static import would put the whole lib
+  // (waveform editor included) in the initial bundle.
+  private async loadCountIn(): Promise<void> {
+    const { CountInEngineService, CountInStore, CountInYoutubeHost } = await import('@gblp/count-in-practice');
+    const engine = this.injector.get(CountInEngineService);
+    this.countInHostOutlet().createComponent(CountInYoutubeHost, {
+      bindings: [
+        inputBinding('language', this.preferences.language),
+        inputBinding('theme', this.preferences.theme),
+        outputBinding('returnRequested', () => this.router.navigate(['/count-in'])),
+      ],
+    });
+    this.syncCountInWithMetronome(engine, this.injector.get(CountInStore));
+    this.countInEngine.set(engine);
+    markCountInHostReady();
+  }
+
+  // Count-In and the navbar metronome share tempo and meter, and only one of
+  // them plays at a time. Count-In's (persisted) values win at startup; the
+  // metronome only writes back while the loop is idle, so a running loop never
+  // changes speed under the player.
+  private syncCountInWithMetronome(engine: CountInEngineService, store: CountInStore): void {
+    const options = { injector: this.injector };
+    effect(() => {
+      const bpm = store.bpm();
+      const beats = store.beatsPerMeasure();
+      untracked(() => {
+        this.tempo.bpm.set(bpm);
+        this.tempo.beatsPerMeasure.set(beats);
+      });
+    }, options);
+    effect(() => {
+      const bpm = this.tempo.bpm();
+      const beats = this.tempo.beatsPerMeasure();
+      untracked(() => {
+        if (engine.transport() !== 'idle') return;
+        store.bpm.set(bpm);
+        store.beatsPerMeasure.set(beats);
+      });
+    }, options);
+    effect(() => {
+      if (engine.transport() === 'playing') untracked(() => this.tempo.isPlaying() && this.tempo.stop());
+    }, options);
+    effect(() => {
+      if (this.tempo.isPlaying()) untracked(() => engine.transport() !== 'idle' && engine.stop());
+    }, options);
   }
 
   onRouteActivate(component: unknown): void {

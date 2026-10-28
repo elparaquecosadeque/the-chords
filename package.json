@@ -24,7 +24,7 @@
     "@angular/service-worker": "^22.2.3",
     "@fortawesome/fontawesome-free": "^7.3.0",
     "@gblp/bass-notes": "^0.2.3",
-    "@gblp/chord-finder": "^0.9.0",
+    "@gblp/chord-finder": "^0.9.1",
     "@gblp/circle-of-fifths": "^0.4.6",
     "@gblp/count-in-practice": "^0.8.0",
     "@gblp/soloin": "^0.5.2",

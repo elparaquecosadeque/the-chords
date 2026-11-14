@@ -1,4 +1,4 @@
-import { Component, computed, effect, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, DestroyRef, effect, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,7 +6,7 @@ import { BassNotesPage } from '@gblp/bass-notes';
 import { CircleOfFifthsComponent, CircleOfFifthsWheel } from '@gblp/circle-of-fifths';
 import { ChordFinderComponent } from '@gblp/chord-finder';
 import { detectKey } from '@gblp/music-theory';
-import { SoloinComponent, type SoloinSessionState } from '@gblp/soloin';
+import { SoloinComponent, type SoloinBeatEvent, type SoloinSessionState } from '@gblp/soloin';
 import { filter } from 'rxjs';
 
 import { BackingTrack, type BackingTrackInitialState } from './backing-track';
@@ -51,6 +51,11 @@ export class ComposePage {
 
   readonly tabs = TABS;
   readonly activeTab = signal<ComposeTab>('rhythm');
+
+  // Forwarded to Soloin's Practice mode (Solo tab) so it can step in time
+  // with the same transport the Rhythm tab's metronome drives.
+  readonly soloinBeatEvent = signal<SoloinBeatEvent | null>(null);
+  readonly transportPlaying = this.tempo.isPlaying;
 
   private readonly chordFinder = viewChild(ChordFinderComponent);
   private readonly circle = viewChild(CircleOfFifthsComponent);
@@ -102,6 +107,11 @@ export class ComposePage {
   private skipNextApply = false;
 
   constructor() {
+    const unsubscribeBeat = this.tempo.onBeat((event) =>
+      this.soloinBeatEvent.set({ totalBeatIndex: event.totalBeatIndex, isAccent: event.isAccent }),
+    );
+    inject(DestroyRef).onDestroy(unsubscribeBeat);
+
     // This component's own creation was already navigated to by the time its
     // constructor runs (that's why the route matched) — a plain event
     // subscription below would miss that first navigation entirely, so its

@@ -359,3 +359,83 @@
     flex-wrap: wrap;
   }
 }
+
+// Stops a Count-In loop that keeps playing on another page. Amber: the loop's
+// own color (count-in's tertiary), apart from the metronome's cyan.
+.count-in-chip {
+  --count-in-amber: #f2c14b;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 7px;
+  color: var(--count-in-amber);
+  background: color-mix(in srgb, var(--count-in-amber) 10%, transparent);
+  border: 1px solid var(--count-in-amber);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: color-mix(in srgb, var(--count-in-amber) 20%, transparent);
+    outline: none;
+  }
+
+  .chip-stop {
+    display: grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    background: var(--count-in-amber);
+    border-radius: 50%;
+
+    &::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: #1d1600;
+      border-radius: 1px;
+    }
+  }
+
+  .chip-beat {
+    width: 6px;
+    height: 6px;
+    background: var(--count-in-amber);
+    border-radius: 50%;
+    animation: count-in-chip-beat 1s ease-out infinite;
+
+    &.paused {
+      animation: none;
+      opacity: 0.35;
+    }
+  }
+}
+
+.shell[data-theme='light'] .count-in-chip {
+  --count-in-amber: #8a6100;
+}
+
+@keyframes count-in-chip-beat {
+  0%,
+  12% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  40%,
+  100% {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .count-in-chip .chip-beat {
+    animation: none;
+  }
+}

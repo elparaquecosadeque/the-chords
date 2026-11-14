@@ -103,7 +103,11 @@
     <the-chords-circle-of-fifths [language]="preferences.language()" />
   </div>
   <div class="compose-panel" [hidden]="activeTab() !== 'solo'">
-    <the-chords-soloin [language]="preferences.language()" />
+    <the-chords-soloin
+      [language]="preferences.language()"
+      [beatEvent]="soloinBeatEvent()"
+      [transportPlaying]="transportPlaying()"
+    />
   </div>
   <div class="compose-panel" [hidden]="activeTab() !== 'bass'">
     <app-bass-notes [language]="preferences.language()" />

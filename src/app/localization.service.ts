@@ -16,6 +16,13 @@ export class LocalizationService {
                 soloin: 'Soloin',
                 countIn: 'Count-In',
                 compose: 'Componer',
+                countInStop: 'Detener count-in',
+                countInPage: {
+                    title: 'Count-In',
+                    intro:
+                        'Carga un audio o un video de YouTube, recorta el fragmento y practícalo en loop con un count-in y count-out de metrónomo. Sigue sonando mientras exploras el resto de la app.',
+                    chords: 'Acordes',
+                },
                 composePage: {
                     title: 'Componer',
                     intro:
@@ -160,6 +167,13 @@ export class LocalizationService {
                 soloin: 'Soloin',
                 countIn: 'Count-In',
                 compose: 'Compose',
+                countInStop: 'Stop count-in',
+                countInPage: {
+                    title: 'Count-In',
+                    intro:
+                        'Load an audio file or a YouTube video, trim the fragment and practice it in a loop with a metronome count-in and count-out. It keeps playing while you explore the rest of the app.',
+                    chords: 'Chords',
+                },
                 composePage: {
                     title: 'Compose',
                     intro:

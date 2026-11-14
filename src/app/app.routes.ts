@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 
+import { countInHostReady } from './count-in-session';
+
 export const routes: Routes = [
   {
     path: '',
@@ -32,6 +34,7 @@ export const routes: Routes = [
   {
     path: 'count-in',
     title: 'Count-In | The Chords',
+    canActivate: [() => countInHostReady.then(() => true)],
     loadComponent: () =>
       import('./count-in-practice-page').then(({ CountInPracticePage }) => CountInPracticePage),
   },

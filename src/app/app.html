@@ -41,6 +41,15 @@
 
     <div class="preferences">
       <app-metronome />
+      @let engine = countInEngine();
+      @if (engine && engine.transport() !== 'idle' && activeRouteKey() !== 'count-in') {
+        <button type="button" class="count-in-chip" [attr.aria-label]="languageLocalization().countInStop"
+          [title]="languageLocalization().countInStop" (click)="engine.stop()">
+          <span class="chip-stop" aria-hidden="true"></span>
+          Count-In
+          <span class="chip-beat" [class.paused]="engine.transport() === 'paused'" aria-hidden="true"></span>
+        </button>
+      }
       <button
         type="button"
         class="mobile-settings-toggle"
@@ -87,6 +96,8 @@
   <main class="tool-content">
     <router-outlet (activate)="onRouteActivate($event)" (deactivate)="onRouteActivate(null)" />
   </main>
+
+  <ng-container #countInHost />
 
   <app-info-modal [open]="infoOpen()" [routeKey]="activeRouteKey()" [composeTab]="composeActiveTab()"
     (closed)="infoOpen.set(false)" />

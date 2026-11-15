@@ -27,7 +27,7 @@
     "@gblp/chord-finder": "^0.10.2",
     "@gblp/circle-of-fifths": "^0.5.1",
     "@gblp/count-in-practice": "^0.8.0",
-    "@gblp/soloin": "^0.11.1",
+    "@gblp/soloin": "^0.11.2",
     "driver.js": "^1.8.0",
     "rxjs": "~7.8.0",
     "smplr": "^1.0.0",
